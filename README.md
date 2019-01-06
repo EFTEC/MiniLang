@@ -22,5 +22,6 @@ A mini language script for PHP
 
 ## Version
 
-1.14 2018-12-26 First open source version.
+* 1.15 2019-01-06 If we add (+) two values and they are numeric then we add, otherwise we concantenate.  
+* 1.14 2018-12-26 First open source version.
 

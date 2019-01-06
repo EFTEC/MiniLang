@@ -7,7 +7,7 @@ namespace eftec\minilang;
  * Class MiniLang
  * @package eftec\minilang
  * @author   Jorge Patricio Castro Castillo <jcastro arroba eftec dot cl>
- * @version 1.14 2018-12-23
+ * @version 1.15 2019-01-06
  * * now function allows parameters fnname(1,2,3)
  * * now set allows operators (+,-,*,/). set field=a1+20+40
  * @link https://github.com/EFTEC/MiniLang
@@ -17,12 +17,12 @@ class MiniLang
 {
 	/**
 	 * When operators (if any)
-	 * @var array 
+	 * @var array
 	 */
 	var $logic=[];
 	/**
 	 * Set operators (if any
-	 * @var array 
+	 * @var array
 	 */
 	var $set=[];
 	private $specialCom=[];
@@ -105,7 +105,7 @@ class MiniLang
 							// its an area. <area> <somvalue>
 							if (count($rToken)>$i+2) {
 								$tk=$rToken[$i + 2];
-								
+
 								switch ($tk[0]) {
 									case T_VARIABLE:
 										$this->areaValue[$v[1]]=['var',$tk[1],null];
@@ -240,7 +240,7 @@ class MiniLang
 		foreach($this->logic[$idx] as $k=> $v) {
 			if($v[0]==='pair') {
 				if ($v[1]=='special') {
-					
+
 					if (count($v)>=7) {
 						return $caller->{$v[2]}($v[6]);
 					} else {
@@ -304,7 +304,7 @@ class MiniLang
 			}
 		}
 	}
-	
+
 	/**
 	 * @param mixed $caller
 	 * @param array $dic
@@ -325,8 +325,13 @@ class MiniLang
 				}
 				for($i=8;$i<count($v);$i+=4) {
 					switch ($v[$i]) {
-						case '+':
-							$field1 += $this->getValue($v[$i+1], $v[$i+2], $v[$i+3], $caller, $dic);
+						case '+': // if we add numbers then it adds, otherwise it concatenates.
+							$field2=$this->getValue($v[$i+1], $v[$i+2], $v[$i+3], $caller, $dic);
+							if (is_numeric($field1) && is_numeric($field2)) {
+								$field1 += $this->getValue($v[$i + 1], $v[$i + 2], $v[$i + 3], $caller, $dic);
+							} else {
+								$field1 .= $this->getValue($v[$i + 1], $v[$i + 2], $v[$i + 3], $caller, $dic);
+							}
 							break;
 						case '-':
 							$field1 -= $this->getValue($v[$i+1], $v[$i+2], $v[$i+3], $caller, $dic);
@@ -407,7 +412,7 @@ class MiniLang
 		if (is_object($caller)) {
 			if(method_exists($caller,$nameFunction)) {
 				return call_user_func_array(array($caller,$nameFunction),$args);
-			} 
+			}
 			if (isset($caller->{$nameFunction})) {
 				return $caller->{$nameFunction};
 			}
@@ -434,7 +439,7 @@ class MiniLang
 				$args[]=$setValue; // it adds a second parameter
 				call_user_func_array(array($caller,$nameFunction),$args);
 				return;
-			
+
 			} elseif (isset($caller->{$nameFunction})) {
 				$caller->{$nameFunction}=$setValue;
 				return;
@@ -579,7 +584,7 @@ class MiniLang
 				$this->logic[$this->langCounter][$f][$idx] = [];
 
 			}
-			$this->logic[$this->langCounter][$f][$idx][] = [$type, $name, $ext];	
+			$this->logic[$this->langCounter][$f][$idx][] = [$type, $name, $ext];
 		}
 	}
 
