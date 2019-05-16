@@ -296,10 +296,19 @@ class MiniLang
 		} // for
 		return $r;
 	}
-	public function evalAllLogic(&$caller,$dictionary,$stopOnFound=true) {
+
+	/**
+	 * It evaluates all logic and sets if the logic is true
+	 * @param object $caller
+	 * @param array $dictionary
+	 * @param bool $stopOnFound
+	 */
+	public function evalAllLogic(&$caller,&$dictionary,$stopOnFound=true) {
 		for($i=0; $i<=$this->langCounter; $i++) {
 			if ($this->evalLogic($caller,$dictionary,$i)) {
+			
 				$this->evalSet($caller,$dictionary,$i);
+			
 				if ($stopOnFound) break;
 			}
 		}
@@ -312,6 +321,7 @@ class MiniLang
 	 * @return void
 	 */
 	public function evalSet(&$caller,&$dic,$idx=0) {
+		var_dump($this->set);
 		foreach($this->set[$idx] as $k=>$v) {
 			if($v[0]==='pair') {
 				$name=$v[2];
