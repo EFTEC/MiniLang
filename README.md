@@ -23,8 +23,9 @@ use eftec\minilang\MiniLang;
 include "../lib/MiniLang.php"; // or the right path to MiniLang.php
 $mini=new MiniLang();
 $mini->separate("when field1=1 then field2=2"); // we set the logic of the language but we are not executed it yet.
+$mini->separate("when field1=2 then field2=4"); // we set more logic.
 $result=['field1'=>1,'field2'=>0]; // used for variables.
-$callback=new stdClass(); // used for callbacks.
+$callback=new stdClass(); // used for callbacks if any
 $mini->evalAllLogic($callback,$result);
 var_dump($result);
 
@@ -82,6 +83,7 @@ For example:
 
 ## Version
 
+* 1.16 2019-05-24 Fixed some bug (if the method is not defined)   
 * 1.15 2019-01-06 If we add (+) two values and they are numeric then we add, otherwise we concantenate.  
-* 1.14 2018-12-26 First open source version.
+* 1.14 2018-12-26 First open source version.   
 

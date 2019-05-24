@@ -7,7 +7,7 @@ namespace eftec\minilang;
  * Class MiniLang
  * @package eftec\minilang
  * @author   Jorge Patricio Castro Castillo <jcastro arroba eftec dot cl>
- * @version 1.15 2019-01-06
+ * @version 1.16 2019-05-24
  * * now function allows parameters fnname(1,2,3)
  * * now set allows operators (+,-,*,/). set field=a1+20+40
  * @link https://github.com/EFTEC/MiniLang
@@ -315,13 +315,13 @@ class MiniLang
 	}
 
 	/**
-	 * @param mixed $caller
+	 * It sets a value.
+	 * @param mixed $caller It is used for callbacks
 	 * @param array $dic
 	 * @param int $idx
 	 * @return void
 	 */
 	public function evalSet(&$caller,&$dic,$idx=0) {
-		var_dump($this->set);
 		foreach($this->set[$idx] as $k=>$v) {
 			if($v[0]==='pair') {
 				$name=$v[2];
@@ -406,8 +406,10 @@ class MiniLang
 					case 'fn':
 						// function name($caller,$somevar);
 						$args=[];
-						foreach($ext as $e) {
-							$args[]=$this->getValue($e[0],$e[1],$e[2],$caller,$dic);
+						if ($ext!==null) {
+							foreach ($ext as $e) {
+								$args[] = $this->getValue($e[0], $e[1], $e[2], $caller, $dic);
+							}
 						}
 						$this->callFunctionSet($caller,$name,$args,$field1);
 						break;
@@ -418,6 +420,13 @@ class MiniLang
 			}
 		} // for
 	}
+	/**
+	 * It calls a function predefined by the caller. Example var.myfunction or somevar.value=myfunction(arg,arg)
+	 * @param $caller
+	 * @param $nameFunction
+	 * @param $args
+	 * @return mixed (it could returns an error if the function fails)
+	 */
 	private function callFunction($caller, $nameFunction, $args) {
 		if (is_object($caller)) {
 			if(method_exists($caller,$nameFunction)) {
@@ -433,7 +442,12 @@ class MiniLang
 				}
 			}
 		}
-		return call_user_func_array(array($this->serviceClass,$nameFunction),$args);
+		if(method_exists($this->serviceClass,$nameFunction)) {
+			return call_user_func_array(array($this->serviceClass, $nameFunction), $args);
+		} else {
+			trigger_error("function [$nameFunction] is not defined");
+			return false;
+		}
 	}
 
 	/**
@@ -464,6 +478,18 @@ class MiniLang
 		}
 		call_user_func_array(array($this->serviceClass,$nameFunction),$args);
 	}
+
+	/**
+	 * It obtains a value.
+	 * @param string $type=['subvar','var','number','string','field','subfield','fn','special'][$i]
+	 * @param string $name name of the value. It is also used for the value of the variable. 
+	 * <p> myvar => type=var, name=myvar</p>
+	 * <p> 123 => type=number, name=123</p>
+	 * @param string|array $ext it is used for subvar, subfield and functions
+	 * @param mixed $caller
+	 * @param array $dic
+	 * @return bool|int|mixed|string|null
+	 */
 	public function getValue($type,$name,$ext,$caller,$dic) {
 		switch ($type) {
 			case 'subvar':
