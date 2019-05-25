@@ -40,9 +40,9 @@ The sintaxis of the code is separate in two parts. WHERE (or when) AND SET (or t
 
 Example:
 
-````php
+```php
 $mini->separate("when field1=1 then field2=2");
-````
+```
 
 It says, if field1=1 then we set field2 as 2.
 
@@ -51,11 +51,18 @@ It says, if field1=1 then we set field2 as 2.
 
 A variable is defined by 
 
+
 `varname`
 
-For example
-
-`varname=20`
+Example: 
+```php
+$mini=new MiniLang();
+$mini->separate("when field1>0 then field2=3"); // we prepare the language
+$variables=['field1'=>1]; // we define regular variables
+$callback=new stdClass();
+$mini->evalAllLogic($callback,$variables); // we set the variables and run the languageand run the language
+var_dump($variables);
+```
 
 ### Global variables
 
@@ -69,8 +76,65 @@ For example:
 
 `$globalname=30`
 
+Example Code: 
+```php
+$field1=1; // global variable
+$mini=new MiniLang();
+$mini->separate('when $field1>0 then $field2=3'); // we prepare the language
+$variables=[]; // local variables
+$callback=new stdClass();
+$mini->evalAllLogic($callback,$variables); // we set the variables and run the languageand run the language
+var_dump($field1);
+```
+
+### Reserved methods
+
+| Reserved word | Explanation                                                                  |
+|---------------|------------------------------------------------------------------------------|
+| null()          | null value                                                                   |
+| false()         | false value                                                                  |
+| true()          | true value                                                                   |
+| on()            | 1                                                                            |
+| off()           | 0                                                                            |
+| undef()         | -1 (for undefined)                                                           |
+| flip()          | (special value). It inverts a value ON<->OFF<br>Used as value=flip()                                 |
+| now()          | returns the current timestamp (integer)                                      |
+| timer()         | returns the current timestamp (integer)                                      |
+| interval()      | returns the interval (in seconds) between the last change and now. It uses the field dateLastChange or method dateLastChange() of the callback class            |
+| fullinterval()  | returns the interval (in seconds) between the start of the process and now. It uses the field dateInit or method dateInit() of the callback class |
 
 
+Example: [examples/examplereserved.php](examples/examplereserved.php)  
+```php
+$mini=new MiniLang();
+$mini->separate("when true=true then field1=timer()"); // we prepare the language
+$variables=['field1'=>1]; // we define regular variables
+$callback=new stdClass();
+$mini->evalAllLogic($callback,$variables); // we set the variables and run the language
+var_dump($variables);
+```
+
+
+Example Timer: [examples/examplereservedtimer.php](examples/examplereservedtimer.php)  
+```php
+class ClassWithTimer {
+	var $dateLastChange;
+	public function dateInit() {
+		return time();
+	}
+	public function __construct()
+	{
+		$this->dateLastChange=time();
+		
+	}
+}
+$mini=new MiniLang();
+$mini->separate("when true=true then field1=interval() and field2=fullinterval()"); // we prepare the language
+$variables=['field1'=>0,'field2'=>0]; // we define regular variables
+$callback=new ClassWithTimer();
+$mini->evalAllLogic($callback,$variables); // we set the variables and run the language
+var_dump($variables);
+```
 
 ## Documentation
 

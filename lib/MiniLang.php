@@ -537,9 +537,23 @@ class MiniLang
 					case 'timer':
 						return time();
 					case 'interval':
-						return time() - $caller->dateLastChange;
+						if (isset($caller->dateLastChange)) {
+							return time() - $caller->dateLastChange;
+						}
+						if (method_exists($caller,'dateLastChange')) {
+							return time() - $caller->dateLastChange();
+						}
+						trigger_error("caller doesn't define field or method dateLastChange");
+						break;
 					case 'fullinterval':
-						return time() - $caller->dateInit;
+						if (isset($caller->dateInit)) {
+							return time() - $caller->dateInit;
+						}
+						if (method_exists($caller,'dateInit')) {
+							return time() - $caller->dateInit();
+						}
+						trigger_error("caller doesn't define field or method dateInit");
+						break;
 					default:
 						$args=[];
 						foreach($ext as $e) {
