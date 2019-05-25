@@ -1,12 +1,13 @@
 {
     "name": "eftec/minilang",
-    "description": "A mini language script for php",
+    "description": "A mini scripting language for php",
     "version": "1.17",
     "type": "library",
     "keywords": [
         "php"
-        ,"script",
-        "language"
+        ,"script"
+        ,"scripting"
+        ,"language"
     ],
     "homepage": "https://github.com/EFTEC/MiniLang",
     "authors": [
