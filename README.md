@@ -51,18 +51,115 @@ It says, if field1=1 then we set field2 as 2.
 
 A variable is defined by 
 
-
 `varname`
 
-Example: 
+Example:  [examples/examplevariable.php](examples/examplevariable.php)
 ```php
 $mini=new MiniLang();
 $mini->separate("when field1>0 then field2=3"); // we prepare the language
 $variables=['field1'=>1]; // we define regular variables
 $callback=new stdClass();
 $mini->evalAllLogic($callback,$variables); // we set the variables and run the languageand run the language
+var_dump($variables); // field1=1, field2=3
+```
+### Variables defined by a PHP Object
+
+A variable could host a PHP object and it is possible to call and to access the fields inside it.
+
+`varname.field`
+
+* If the field exists then it uses it.
+* If the field doesn't exist then it uses a method of the caller.
+* If the method of the caller doesn't exist then it tries to use the method of the service class 
+* Finally, if everything fails then it trigges an error.
+
+Example of code [examples/examplevariable2.php](examples/examplevariable2.php)
+
+```php
+class MyModel {
+	var $id=1;
+	var $value="";	
+	public function __construct($id=0, $value="")
+	{
+		$this->id = $id;
+		$this->value = $value;
+	}
+}
+class ClassCaller {
+	public function Processcaller($arg) {
+		echo "Caller: setting the variable {$arg->id}<br>";
+	}
+}
+class ClassService {
+	public function ProcessService($arg) {
+		echo "Service: setting the variable {$arg->id}<br>";
+	}
+}
+$mini=new MiniLang([],[],new ClassService());
+$mini->separate("when field1.id>0 then 
+				field2.value=3 
+				and field3.processcaller 
+				and processcaller(field3) 
+				and processservice(field3)"); // we prepare the language
+$variables=['field1'=>new MyModel(1,"hi")
+			,'field2'=>new MyModel(2,'')
+			,'field3'=>new MyModel(3,'')]; // we define regular variables
+$callback=new ClassCaller();
+$mini->evalAllLogic($callback,$variables,false); // we set the variables and run the languageand run the language
 var_dump($variables);
 ```
+
+* field2.value references the field "value" (MyModel)
+* field3.processcaller references the method ClassCaller::processcaller()
+* processcaller(field3) does the same than field3.processcaller
+* processservice(field3) calls the method ClassService::processservice()
+
+### Variables defined by a PHP array
+
+A variable could host a PHP array and it is possible to call and to access the elements inside it.
+
+`varname.field`
+
+* If the element exists then it uses it.
+* If the element doesn't exist then it uses a method of the caller.
+* If the method of the caller doesn't exist then it tries to use the method of the service class 
+* Finally, if everything fails then it trigges an error.
+
+Example of code [examples/examplevariable_arr.php](examples/examplevariable_arr.php)
+
+```php
+class ClassCaller {
+	public function Processcaller($arg) {
+		echo "Caller: setting the variable {$arg['id']}<br>";
+	}
+}
+class ClassService {
+	public function ProcessService($arg) {
+		echo "Service: setting the variable {$arg['id']}<br>";
+	}
+}
+
+$mini=new MiniLang([],[],new ClassService());
+$mini->separate("when field1.id>0 then 
+				field2.value=3 
+				and field3.processcaller 
+				and processcaller(field3) 
+				and processservice(field3)"); 
+
+$variables=['field1'=>['id'=>1,'value'=>3]
+			,'field2'=>['id'=>2,'value'=>'']
+			,'field3'=>['id'=>3,'value'=>'']]; 
+$callback=new ClassCaller();
+$mini->evalAllLogic($callback,$variables,false);
+var_dump($variables);
+
+```
+
+* field2.value references the element "value" of the array
+* field3.processcaller references the method ClassCaller::processcaller()
+* processcaller(field3) does the same than field3.processcaller
+* processservice(field3) calls the method ClassService::processservice()
+
 
 ### Global variables
 
@@ -76,15 +173,15 @@ For example:
 
 `$globalname=30`
 
-Example Code: 
+Example Code: [examples/exampleglobal.php](examples/exampleglobal.php)
 ```php
 $field1=1; // global variable
 $mini=new MiniLang();
-$mini->separate('when $field1>0 then $field2=3'); // we prepare the language
+$mini->separate('when $field1>0 then $field1=3'); // we prepare the language
 $variables=[]; // local variables
 $callback=new stdClass();
 $mini->evalAllLogic($callback,$variables); // we set the variables and run the languageand run the language
-var_dump($field1);
+var_dump($field1); // returns 3
 ```
 
 ### Reserved methods
@@ -147,6 +244,7 @@ var_dump($variables);
 
 ## Version
 
+* 1.17 2019-05-25 Some maintenance. Added new documentation.
 * 1.16 2019-05-24 Fixed some bug (if the method is not defined)   
 * 1.15 2019-01-06 If we add (+) two values and they are numeric then we add, otherwise we concantenate.  
 * 1.14 2018-12-26 First open source version.   

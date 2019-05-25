@@ -7,7 +7,7 @@ namespace eftec\minilang;
  * Class MiniLang
  * @package eftec\minilang
  * @author   Jorge Patricio Castro Castillo <jcastro arroba eftec dot cl>
- * @version 1.16 2019-05-24
+ * @version 1.17 2019-05-25
  * * now function allows parameters fnname(1,2,3)
  * * now set allows operators (+,-,*,/). set field=a1+20+40
  * @link https://github.com/EFTEC/MiniLang
@@ -301,7 +301,7 @@ class MiniLang
 	 * It evaluates all logic and sets if the logic is true
 	 * @param object $caller
 	 * @param array $dictionary
-	 * @param bool $stopOnFound
+	 * @param bool $stopOnFound exit if some evaluation matches
 	 */
 	public function evalAllLogic(&$caller,&$dictionary,$stopOnFound=true) {
 		for($i=0; $i<=$this->langCounter; $i++) {
@@ -428,6 +428,22 @@ class MiniLang
 	 * @return mixed (it could returns an error if the function fails)
 	 */
 	private function callFunction($caller, $nameFunction, $args) {
+		if (count($args)===1 ) {
+			if (is_object($args[0])) {
+				// the call is the form nameFunction(somevar) or somevar.nameFunction()
+				if (isset($args[0]->{$nameFunction})) {
+					// someobject.field (nameFunction acts as a field name)
+					return $args[0]->{$nameFunction};
+				}
+			}
+			if (is_array($args[0])) {
+				// the call is the form nameFunction(somevar) or somevar.nameFunction()
+				if (isset($args[0][$nameFunction])) {
+					// someobject.field (nameFunction acts as a field name)
+					return $args[0][$nameFunction];
+				}
+			}
+		}
 		if (is_object($caller)) {
 			if(method_exists($caller,$nameFunction)) {
 				return call_user_func_array(array($caller,$nameFunction),$args);
@@ -458,6 +474,24 @@ class MiniLang
 	 * @return void
 	 */
 	private function callFunctionSet($caller, $nameFunction, $args, $setValue) {
+		if (count($args)===1 ) {
+			if (is_object($args[0])) {
+				// the call is the form nameFunction(somevar)=1 or somevar.nameFunction()=1
+				if (isset($args[0]->{$nameFunction})) {
+					// someobject.field (nameFunction acts as a field name
+					$args[0]->{$nameFunction} = $setValue;
+					return;
+				}
+			}
+			if (is_array($args[0])) {
+				// the call is the form nameFunction(somevar)=1 or somevar.nameFunction()=1
+				if (isset($args[0][$nameFunction])) {
+					// someobject.field (nameFunction acts as a field name
+					$args[0][$nameFunction] = $setValue;
+					return;
+				}
+			}
+		}
 		if (is_object($caller)) {
 			if(method_exists($caller,$nameFunction)) {
 				$args[]=$setValue; // it adds a second parameter
