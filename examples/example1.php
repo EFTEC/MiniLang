@@ -4,11 +4,6 @@ use eftec\minilang\MiniLang;
 
 include "../lib/MiniLang.php";
 
-$mini=new MiniLang([],[]);
-
-$mini->separate("when field1=1 then field2=2");
-$mini->separate("when field1=2 then field2=4");
-
 class DummyClassExample {
 	var $values=[];
 	public function test() {
@@ -18,15 +13,19 @@ class DummyClassExample {
 $caller=new DummyClassExample();
 $caller->values=['field1'=>1,'field2'=>0];
 
-if ($mini->evalLogic($caller,$caller->values)) {
-	$mini->evalSet($caller,$caller->values);
-}
+$mini=new MiniLang($caller,$caller->values);
 
+$mini->separate("when field1=1 then field2=2");
+$mini->separate("when field1=2 then field2=4");
+
+
+if ($mini->evalLogic()) {
+	$mini->evalSet();
+}
 
 
 var_dump($caller->values['field2']);
 
-$result=['field1'=>2,'field2'=>0];
-$callback=new stdClass();
-$mini->evalAllLogic($callback,$result);
-var_dump($result);
+
+$mini->evalAllLogic();
+var_dump($caller->values);

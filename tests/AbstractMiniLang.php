@@ -13,7 +13,9 @@ abstract class AbstractMiniLang extends TestCase {
     protected $mini;
     public function __construct($name = null, array $data = [], $dataName = '') {
         parent::__construct($name, $data, $dataName);
-        $this->mini=new MiniLang([],[]);
+        $dummy=new \stdClass();
+        $values=[];
+        $this->mini=new MiniLang($dummy,$values);
         //$this->statemachineone->setDebug(true);
     }
 }

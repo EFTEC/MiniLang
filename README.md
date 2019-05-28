@@ -21,12 +21,14 @@ Creating a new project
 ```php
 use eftec\minilang\MiniLang;
 include "../lib/MiniLang.php"; // or the right path to MiniLang.php
-$mini=new MiniLang();
-$mini->separate("when field1=1 then field2=2"); // we set the logic of the language but we are not executed it yet.
-$mini->separate("when field1=2 then field2=4"); // we set more logic.
 $result=['field1'=>1,'field2'=>0]; // used for variables.
 $callback=new stdClass(); // used for callbacks if any
-$mini->evalAllLogic($callback,$result);
+
+$mini=new MiniLang($callback,$result);
+$mini->separate("when field1=1 then field2=2"); // we set the logic of the language but we are not executed it yet.
+$mini->separate("when field1=2 then field2=4"); // we set more logic.
+
+$mini->evalAllLogic();
 var_dump($result);
 
 ```
@@ -36,15 +38,15 @@ var_dump($result);
 
 ### Sintaxis.
 
-The sintaxis of the code is separate in two parts. WHERE (or when) AND SET (or then).
+The sintaxis of the code is separate in three parts.INIT (initialize) , WHERE (or when) AND SET (or then).
 
 Example:
 
 ```php
-$mini->separate("when field1=1 then field2=2");
+$mini->separate("field=0 when field1=1 then field2=2");
 ```
 
-It says, if field1=1 then we set field2 as 2.
+It says, field=0 (initialize the value only on start) if field1=1 then we set field2 as 2.
 
 
 ### Variables
@@ -55,11 +57,12 @@ A variable is defined by
 
 Example:  [examples/examplevariable.php](examples/examplevariable.php)
 ```php
-$mini=new MiniLang();
-$mini->separate("when field1>0 then field2=3"); // we prepare the language
 $variables=['field1'=>1]; // we define regular variables
 $callback=new stdClass();
-$mini->evalAllLogic($callback,$variables); // we set the variables and run the languageand run the language
+$mini=new MiniLang($callback,$variables);
+$mini->separate("when field1>0 then field2=3"); // we prepare the language
+
+$mini->evalAllLogic(); // we set the variables and run the languageand run the language
 var_dump($variables); // field1=1, field2=3
 ```
 ### Variables defined by a PHP Object
@@ -95,17 +98,18 @@ class ClassService {
 		echo "Service: setting the variable {$arg->id}<br>";
 	}
 }
-$mini=new MiniLang([],[],new ClassService());
+$variables=['field1'=>new MyModel(1,"hi")
+			,'field2'=>new MyModel(2,'')
+			,'field3'=>new MyModel(3,'')]; // we define regular variables
+$callback=new ClassCaller();
+$mini=new MiniLang($callback,$variables,[],[],new ClassService());
 $mini->separate("when field1.id>0 then 
 				field2.value=3 
 				and field3.processcaller 
 				and processcaller(field3) 
 				and processservice(field3)"); // we prepare the language
-$variables=['field1'=>new MyModel(1,"hi")
-			,'field2'=>new MyModel(2,'')
-			,'field3'=>new MyModel(3,'')]; // we define regular variables
-$callback=new ClassCaller();
-$mini->evalAllLogic($callback,$variables,false); // we set the variables and run the languageand run the language
+
+$mini->evalAllLogic(false); // we set the variables and run the languageand run the language
 var_dump($variables);
 ```
 
@@ -138,19 +142,19 @@ class ClassService {
 		echo "Service: setting the variable {$arg['id']}<br>";
 	}
 }
-
-$mini=new MiniLang([],[],new ClassService());
+$variables=['field1'=>['id'=>1,'value'=>3]
+			,'field2'=>['id'=>2,'value'=>'']
+			,'field3'=>['id'=>3,'value'=>'']]; 
+$callback=new ClassCaller();
+$mini=new MiniLang($callback,$variables,[],[],new ClassService());
 $mini->separate("when field1.id>0 then 
 				field2.value=3 
 				and field3.processcaller 
 				and processcaller(field3) 
 				and processservice(field3)"); 
 
-$variables=['field1'=>['id'=>1,'value'=>3]
-			,'field2'=>['id'=>2,'value'=>'']
-			,'field3'=>['id'=>3,'value'=>'']]; 
-$callback=new ClassCaller();
-$mini->evalAllLogic($callback,$variables,false);
+
+$mini->evalAllLogic(false);
 var_dump($variables);
 
 ```
@@ -176,11 +180,12 @@ For example:
 Example Code: [examples/exampleglobal.php](examples/exampleglobal.php)
 ```php
 $field1=1; // global variable
-$mini=new MiniLang();
-$mini->separate('when $field1>0 then $field1=3'); // we prepare the language
 $variables=[]; // local variables
 $callback=new stdClass();
-$mini->evalAllLogic($callback,$variables); // we set the variables and run the languageand run the language
+$mini=new MiniLang($callback,$variables);
+$mini->separate('when $field1>0 then $field1=3'); // we prepare the language
+
+$mini->evalAllLogic(); // we set the variables and run the languageand run the language
 var_dump($field1); // returns 3
 ```
 
@@ -203,11 +208,12 @@ var_dump($field1); // returns 3
 
 Example: [examples/examplereserved.php](examples/examplereserved.php)  
 ```php
-$mini=new MiniLang();
-$mini->separate("when true=true then field1=timer()"); // we prepare the language
 $variables=['field1'=>1]; // we define regular variables
 $callback=new stdClass();
-$mini->evalAllLogic($callback,$variables); // we set the variables and run the language
+$mini=new MiniLang($callback,$variables);
+$mini->separate("when true=true then field1=timer()"); // we prepare the language
+
+$mini->evalAllLogic(); // we set the variables and run the language
 var_dump($variables);
 ```
 
@@ -225,11 +231,12 @@ class ClassWithTimer {
 		
 	}
 }
-$mini=new MiniLang();
-$mini->separate("when true=true then field1=interval() and field2=fullinterval()"); // we prepare the language
 $variables=['field1'=>0,'field2'=>0]; // we define regular variables
 $callback=new ClassWithTimer();
-$mini->evalAllLogic($callback,$variables); // we set the variables and run the language
+$mini=new MiniLang($callback,$variables);
+$mini->separate("when true=true then field1=interval() and field2=fullinterval()"); // we prepare the language
+
+$mini->evalAllLogic(); // we set the variables and run the language
 var_dump($variables);
 ```
 
@@ -244,6 +251,7 @@ var_dump($variables);
 
 ## Version
 
+* 2.00 2019-05-28 Now it has INIT part together with WHERE and SET
 * 1.17 2019-05-25 Some maintenance. Added new documentation.
 * 1.16 2019-05-24 Fixed some bug (if the method is not defined)   
 * 1.15 2019-01-06 If we add (+) two values and they are numeric then we add, otherwise we concantenate.  
