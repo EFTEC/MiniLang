@@ -7,7 +7,7 @@ namespace eftec\minilang;
  * Class MiniLang
  * @package eftec\minilang
  * @author   Jorge Patricio Castro Castillo <jcastro arroba eftec dot cl>
- * @version 2.0 2019-05-25
+ * @version 2.1 2019-05-31
  * * now function allows parameters fnname(1,2,3)
  * * now set allows operators (+,-,*,/). set field=a1+20+40
  * @link https://github.com/EFTEC/MiniLang
@@ -41,7 +41,7 @@ class MiniLang
 
 	/** @var array */
 	private $dict;
-	
+
 	private $langCounter=0;
 
 	/**
@@ -50,7 +50,7 @@ class MiniLang
 	 * @param array $dict
 	 * @param array $specialCom Special commands. it calls a function of the caller.
 	 * @param array $areaName It marks special areas that could be called as "<namearea> somevalue"
-	 * @param null $serviceClass
+	 * @param null|object $serviceClass
 	 */
 	public function __construct(&$caller,&$dict,array $specialCom=[],$areaName=[],$serviceClass=null)
 	{
@@ -63,14 +63,19 @@ class MiniLang
 		$this->where=[];
 		$this->set=[];
 		$this->init=[];
+
+
 	}
 
-
+	/**
+	 * It reset the previous definitions but the variables, service and areas
+	 */
 	public function reset() {
+		$this->langCounter=-1;
+		$this->where=[];
+		$this->set=[];
+		$this->init=[];
 
-
-		//$this->areaName=[];
-		//$this->areaValue=[];
 	}
 
 	/**
@@ -92,11 +97,11 @@ class MiniLang
 	 * @param $text
 	 */
 	public function separate($text) {
-		$this->reset();
 		$this->langCounter++;
 
 		$this->where[$this->langCounter]=[];
 		$this->set[$this->langCounter]=[];
+		$this->init[$this->langCounter]=[];
 		$rToken=token_get_all("<?php ".$text);
 		/*echo "<pre>";
 		var_dump($rToken);
@@ -274,7 +279,7 @@ class MiniLang
 	}
 
 	/**
-
+	 * It evaluates a logic
 	 * @param int $idx
 	 * @return bool|string it returns the evaluation of the logic or it returns the value special (if any).
 	 */
@@ -282,6 +287,7 @@ class MiniLang
 		$prev=true;
 		$r=false;
 		$addType='';
+		if (count($this->where[$idx])===0) return true; // no where = true
 		foreach($this->where[$idx] as $k=> $v) {
 			if($v[0]==='pair') {
 				if ($v[1]=='special') {
@@ -353,9 +359,9 @@ class MiniLang
 				$this->evalSet($i,'init');
 			}
 			if ($this->evalLogic($i)) {
-			
+
 				$this->evalSet($i);
-			
+
 				if ($stopOnFound) break;
 			}
 		}
@@ -368,8 +374,9 @@ class MiniLang
 	 * @return void
 	 */
 	public function evalSet($idx=0,$position='set') {
-		$exp=($position=='set')? $this->set[$idx] : $this->init[$idx];
-		
+		$exp=($position=='set')? $this->set[$idx]
+			: $this->init[$idx];
+
 		foreach($exp as $k=>$v) {
 			if($v[0]==='pair') {
 				$name=$v[2];
@@ -509,6 +516,7 @@ class MiniLang
 		if(method_exists($this->serviceClass,$nameFunction)) {
 			return call_user_func_array(array($this->serviceClass, $nameFunction), $args);
 		} else {
+
 			trigger_error("function [$nameFunction] is not defined");
 			return false;
 		}
@@ -557,13 +565,15 @@ class MiniLang
 				}
 			}
 		}
+		if ($this->serviceClass!==null) {
 		call_user_func_array(array($this->serviceClass,$nameFunction),$args);
+	}
 	}
 
 	/**
 	 * It obtains a value.
 	 * @param string $type=['subvar','var','number','string','stringp','field','subfield','fn','special'][$i]
-	 * @param string $name name of the value. It is also used for the value of the variable. 
+	 * @param string $name name of the value. It is also used for the value of the variable.
 	 * <p> myvar => type=var, name=myvar</p>
 	 * <p> 123 => type=number, name=123</p>
 	 * @param string|array $ext it is used for subvar, subfield and functions
@@ -641,9 +651,11 @@ class MiniLang
 						break;
 					default:
 						$args=[];
+						if ($ext) {
 						foreach($ext as $e) {
 							$args[]=$this->getValue($e[0],$e[1],$e[2]);
 						}
+						} 
 						return $this->callFunction($name,$args);
 				}
 				break;
@@ -759,7 +771,7 @@ class MiniLang
 				$idx = count($this->init[$this->langCounter][$f]) - 1;
 				if (!isset($this->init[$this->langCounter][$f][$idx])) {
 					$this->init[$this->langCounter][$f][$idx] = [];
-	
+
 				}
 				$this->init[$this->langCounter][$f][$idx][] = [$type, $name, $ext];
 				break;
@@ -806,7 +818,7 @@ class MiniLang
 				}
 				break;
 		}
-		
+
 	}
 
 	/**
@@ -832,6 +844,6 @@ class MiniLang
 		} else {
 			trigger_error("Error: Logic operation in the wrong place");
 		}
-		
+
 	}
 }
