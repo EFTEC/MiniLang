@@ -7,7 +7,7 @@ namespace eftec\minilang;
  * Class MiniLang
  * @package eftec\minilang
  * @author   Jorge Patricio Castro Castillo <jcastro arroba eftec dot cl>
- * @version 2.1 2019-05-31
+ * @version 2.2 2019-06-16
  * * now function allows parameters fnname(1,2,3)
  * * now set allows operators (+,-,*,/). set field=a1+20+40
  * @link https://github.com/EFTEC/MiniLang
@@ -103,10 +103,6 @@ class MiniLang
 		$this->set[$this->langCounter]=[];
 		$this->init[$this->langCounter]=[];
 		$rToken=token_get_all("<?php ".$text);
-		/*echo "<pre>";
-		var_dump($rToken);
-		echo "</pre>";*/
-		//die(1);
 		$rToken[]=''; // avoid last operation
 		$count=count($rToken)-1;
 		$first=true;
@@ -129,14 +125,13 @@ class MiniLang
 						break;
 					case T_VARIABLE:
 						if (is_string($rToken[$i+1]) && $rToken[$i+1]=='.') {
-							// $var.vvv
-							$this->addBinOper($first,$position,$inFunction,'subvar'
-								,substr($v[1],1),$rToken[$i+2][1]);
-							$i+=2;
+                            // $var.vvv
+                            $this->addBinOper($first, $position, $inFunction, 'subvar'
+                                , substr($v[1], 1), $rToken[$i + 2][1]);
+                            $i += 2;
 						} else {
 							// $var
-							$this->addBinOper($first,$position,$inFunction,'var'
-								,substr($v[1],1),null);
+							$this->addBinOper($first,$position,$inFunction,'var',substr($v[1],1),null);
 						}
 						break;
 					case T_LNUMBER:
@@ -185,11 +180,23 @@ class MiniLang
 								default:
 									if (is_string($rToken[$i + 1])) {
 										if ($rToken[$i + 1] == '.') {
-											// field.vvv
-											$this->addBinOper($first,$position,$inFunction, 'subfield', $v[1], $rToken[$i + 2][1]);
-											$i += 2;
+                                            if ( @$rToken[$i+3]!='(') {
+                                                // field.vvv
+                                                $this->addBinOper($first, $position, $inFunction, 'subfield', $v[1],
+                                                    $rToken[$i + 2][1]);
+                                                $i += 2;
+                                            } else {
+                                                // $v[1].$rToken[$i+2][1]
+                                                // field.vvv(arg,arg) = vvv(field,arg,arg)
+                                                $this->addBinOper($first, $position, $inFunction, 'fn'
+                                                    , $rToken[$i+2][1], null);
+                                                $inFunction=true;
+                                                $this->addParam($position,'field',$v[1]);
+                                                $i += 3;                                                
+                                            }
 										} elseif ($rToken[$i + 1] == '(') {
 											// function()
+                                            
 											$this->addBinOper($first,$position,$inFunction, 'fn', $v[1], null);
 											$inFunction=true;
 											$i+=1;
@@ -440,7 +447,7 @@ class MiniLang
 					case 'number':
 					case 'string':
 					case 'stringp':
-						trigger_error("comparison {$v[4]} not defined for transaction.");
+                        trigger_error("Literal [{$v[2]}] of the type [{$v[1]}] is not for set.");
 						break;
 					case 'field':
 						switch ($op) {
@@ -761,7 +768,6 @@ class MiniLang
 				$idx = count($this->set[$this->langCounter][$f]) - 1;
 				if (!isset($this->set[$this->langCounter][$f][$idx])) {
 					$this->set[$this->langCounter][$f][$idx] = [];
-
 				}
 				$this->set[$this->langCounter][$f][$idx][] = [$type, $name, $ext];
 				break;

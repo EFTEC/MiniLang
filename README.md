@@ -251,6 +251,7 @@ var_dump($variables);
 
 ## Version
 
+* 2.2  2019-06-16 var.fun = fun(var)
 * 2.00 2019-05-28 Now it has INIT part together with WHERE and SET
 * 1.17 2019-05-25 Some maintenance. Added new documentation.
 * 1.16 2019-05-24 Fixed some bug (if the method is not defined)   
