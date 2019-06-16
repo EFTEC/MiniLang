@@ -120,9 +120,9 @@ class CompilationTest extends AbstractMiniLang
      */
     public function testFn4()
     {
-        $this->mini->separate("when 1=1 then field3=field2.ping(1,2,3,4) and field4=ping('a','b','c')");
+        $this->mini->separate("when 1=1 then field3=field2.ping(1,2,3,4) and field4=ping('a','b','c') and field5.invert()");
         $caller = new DummyClass();
-        $caller->values = ['field1' => 1, 'field2' => "pong"];
+        $caller->values = ['field1' => 1, 'field2' => "pong",'field5'=>'on'];
         $this->mini->setCaller($caller);
         $this->mini->setDict($caller->values);
 

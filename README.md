@@ -251,6 +251,8 @@ var_dump($variables);
 
 ## Version
 
+* 2.3  2019-06-16 if "var" is an object, then calling "var.xyz" calls xyz if it is a field, or xyz() if it is a method
+  , otherwise it calls the service method
 * 2.2  2019-06-16 var.fun = fun(var)
 * 2.00 2019-05-28 Now it has INIT part together with WHERE and SET
 * 1.17 2019-05-25 Some maintenance. Added new documentation.

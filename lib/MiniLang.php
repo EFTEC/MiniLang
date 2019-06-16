@@ -7,7 +7,7 @@ namespace eftec\minilang;
  * Class MiniLang
  * @package eftec\minilang
  * @author   Jorge Patricio Castro Castillo <jcastro arroba eftec dot cl>
- * @version 2.2 2019-06-16
+ * @version 2.3 2019-06-16
  * * now function allows parameters fnname(1,2,3)
  * * now set allows operators (+,-,*,/). set field=a1+20+40
  * @link https://github.com/EFTEC/MiniLang
@@ -37,11 +37,12 @@ class MiniLang
 	var $serviceClass=null;
 	/** @var object for callbacks */
 	private $caller;
-
-
+	
 	/** @var array */
 	private $dict;
-
+    // for runtime:
+    /** @var string current field name */
+	private $currFieldName="";
 	private $langCounter=0;
 
 	/**
@@ -377,7 +378,7 @@ class MiniLang
 	/**
 	 * It sets a value.
 	 * @param int $idx
-	 * @param string $position=['set','init][$i]
+	 * @param string $position=['set','init'][$i]
 	 * @return void
 	 */
 	public function evalSet($idx=0,$position='set') {
@@ -530,20 +531,28 @@ class MiniLang
 	}
 
 	/**
-	 * @param $nameFunction
+	 * @param string $nameFunction
 	 * @param $args
 	 * @param $setValue
 	 * @return void
 	 */
 	private function callFunctionSet($nameFunction, $args, $setValue) {
-		if (count($args)===1 ) {
+		if (count($args)>=1 ) {
 			if (is_object($args[0])) {
+                
 				// the call is the form nameFunction(somevar)=1 or somevar.nameFunction()=1
 				if (isset($args[0]->{$nameFunction})) {
 					// someobject.field (nameFunction acts as a field name
 					$args[0]->{$nameFunction} = $setValue;
 					return;
 				}
+                if (method_exists($args[0],$nameFunction)) {
+                    // someobject.function
+                    $cp=$args;
+                    unset($cp[0]); // it avoids to pass the function as argument
+                    $args[0]->$nameFunction(...$cp); // = $setValue;
+                    return;
+                }
 			}
 			if (is_array($args[0])) {
 				// the call is the form nameFunction(somevar)=1 or somevar.nameFunction()=1
@@ -573,8 +582,9 @@ class MiniLang
 			}
 		}
 		if ($this->serviceClass!==null) {
-		call_user_func_array(array($this->serviceClass,$nameFunction),$args);
-	}
+		
+		    call_user_func_array(array($this->serviceClass,$nameFunction),$args);
+	    }
 	}
 
 	/**
