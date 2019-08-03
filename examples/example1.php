@@ -11,11 +11,11 @@ class DummyClassExample {
 	}
 }
 $caller=new DummyClassExample();
-$caller->values=['field1'=>1,'field2'=>0];
+$caller->values=['field1'=>1,'field2'=>0,'field3'=>123];
 
 $mini=new MiniLang($caller,$caller->values);
 
-$mini->separate("when field1=1 then field2=2");
+$mini->separate("when true() then field2=field2+20+40*40");
 $mini->separate("when field1=2 then field2=4");
 
 
