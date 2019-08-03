@@ -11,11 +11,14 @@ class DummyClassExample {
 	}
 }
 $caller=new DummyClassExample();
-$caller->values=['field1'=>1,'field2'=>0,'field3'=>123];
+$caller->values=['field1'=>1,'field2'=>0,'field3'=>123,'countries'=>['us'=>'usa','ca'=>'canada']];
 
 $mini=new MiniLang($caller,$caller->values);
+$n=2;
+$arr=[10,20,30,40,'a'=>666];
 
-$mini->separate("when true() then field2=field2+20+40*40");
+//$mini->separate('when true() then field2b=$arr');
+$mini->separate('when true() then field3=countries.us');
 $mini->separate("when field1=2 then field2=4");
 
 
@@ -24,7 +27,7 @@ if ($mini->evalLogic()) {
 }
 
 
-var_dump($caller->values['field2']);
+//var_dump($caller->values['field2']);
 
 
 $mini->evalAllLogic();

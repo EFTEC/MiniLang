@@ -8,7 +8,7 @@ namespace eftec\minilang;
  *
  * @package  eftec\minilang
  * @author   Jorge Patricio Castro Castillo <jcastro arroba eftec dot cl>
- * @version  2.4 2019-08-02
+ * @version  2.5 2019-08-03
  * * now function allows parameters fnname(1,2,3)
  * * now set allows operators (+,-,*,/). set field=a1+20+40
  * @link     https://github.com/EFTEC/MiniLang
@@ -122,6 +122,7 @@ class MiniLang
         $position = 'init';
         for ($i = 0; $i < $count; $i++) {
             $v = $rToken[$i];
+            $rTokenNext=$rToken[$i+1];
             if (is_array($v)) {
                 switch ($v[0]) {
                     case T_CONSTANT_ENCAPSED_STRING:
@@ -135,7 +136,14 @@ class MiniLang
                         }
                         break;
                     case T_VARIABLE:
-                        if (is_string($rToken[$i + 1]) && $rToken[$i + 1] == '.') {
+                        if(is_array($rTokenNext)) {
+                            // fix for $aaa.2 
+                            if($rTokenNext[0]==T_DNUMBER && substr($rTokenNext[1],0,1)=='.') {
+                                $rToken[$i+2]=[T_STRING,substr($rTokenNext[1],1)];
+                                $rTokenNext='.';
+                            } 
+                        }
+                        if (is_string($rTokenNext) && $rTokenNext == '.') {
                             // $var.vvv
                             $this->addBinOper($first, $position, $inFunction, 'subvar'
                                 , substr($v[1], 1), $rToken[$i + 2][1]);
@@ -155,7 +163,6 @@ class MiniLang
                             // its an area. <area> <somvalue>
                             if (count($rToken) > $i + 2) {
                                 $tk = $rToken[$i + 2];
-
                                 switch ($tk[0]) {
                                     case T_VARIABLE:
                                         $this->areaValue[$v[1]] = ['var', $tk[1], null];
@@ -163,6 +170,7 @@ class MiniLang
                                     case T_STRING:
                                         $this->areaValue[$v[1]] = ['field', $tk[1], null];
                                         break;
+                                    case T_DNUMBER:
                                     case T_LNUMBER:
                                         $this->areaValue[$v[1]] = $tk[1];
                                         break;
@@ -189,8 +197,15 @@ class MiniLang
                                     $first = true;
                                     break;
                                 default:
-                                    if (is_string($rToken[$i + 1])) {
-                                        if ($rToken[$i + 1] == '.') {
+                                    if(is_array($rTokenNext)) {
+                                        // fix for $aaa.2 
+                                        if($rTokenNext[0]==T_DNUMBER && substr($rTokenNext[1],0,1)=='.') {
+                                            $rToken[$i+2]=[T_STRING,substr($rTokenNext[1],1)];
+                                            $rTokenNext='.';
+                                        }
+                                    }
+                                    if (is_string($rTokenNext)) {
+                                        if ($rTokenNext == '.') {
                                             if (@$rToken[$i + 3] != '(') {
                                                 // field.vvv
                                                 $this->addBinOper($first, $position, $inFunction, 'subfield', $v[1],
@@ -205,7 +220,7 @@ class MiniLang
                                                 $this->addParam($position, 'field', $v[1]);
                                                 $i += 3;
                                             }
-                                        } elseif ($rToken[$i + 1] == '(') {
+                                        } elseif ($rTokenNext == '(') {
                                             // function()
 
                                             $this->addBinOper($first, $position, $inFunction, 'fn', $v[1], null);
@@ -263,12 +278,12 @@ class MiniLang
             } else {
                 switch ($v) {
                     case '-':
-                        if (is_array($rToken[$i + 1])
-                            && ($rToken[$i + 1][0] == T_LNUMBER
-                                || $rToken[$i + 1][0] == T_DNUMBER)
+                        if (is_array($rTokenNext)
+                            && ($rTokenNext[0] == T_LNUMBER
+                                || $rTokenNext[0] == T_DNUMBER)
                         ) {
                             // it's a negative value
-                            $this->addBinOper($first, $position, $inFunction, 'number', -$rToken[$i + 1][1], null);
+                            $this->addBinOper($first, $position, $inFunction, 'number', -$rTokenNext[1], null);
                             $i++;
                         } else {
                             // its a minus
@@ -554,7 +569,6 @@ class MiniLang
         if (method_exists($this->serviceClass, $nameFunction)) {
             return call_user_func_array(array($this->serviceClass, $nameFunction), $args);
         } else {
-
             trigger_error("function [$nameFunction] is not defined");
             return false;
         }
@@ -587,6 +601,7 @@ class MiniLang
                 }
             }
             if (is_array($args[0])) {
+                
                 // the call is the form nameFunction(somevar)=1 or somevar.nameFunction()=1
                 if (isset($args[0][$nameFunction])) {
                     // someobject.field (nameFunction acts as a field name
@@ -637,6 +652,10 @@ class MiniLang
             case 'subvar':
                 // $a.field
                 $rname = @$GLOBALS[$name];
+                if (substr($ext,0,1)==='$') {
+                    // $a.$b
+                    $ext=@$GLOBALS[substr($ext,1)];
+                }
                 $r = (is_object($rname)) ? $rname->{$ext} : $rname[$ext];
                 break;
             case 'var':
@@ -777,6 +796,7 @@ class MiniLang
                 case 'set':
                     $f = count($this->set[$this->langCounter]) - 1;
                     $f2 = count($this->set[$this->langCounter][$f]);
+                    
                     $this->set[$this->langCounter][$f][$f2] = $type;
                     $this->set[$this->langCounter][$f][$f2 + 1] = $name;
                     $this->set[$this->langCounter][$f][$f2 + 2] = $ext;

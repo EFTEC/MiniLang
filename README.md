@@ -200,9 +200,12 @@ var_dump($variables);
 
 ### Variables defined by a PHP array
 
-A variable could host an associative array and it is possible to call and to access the elements inside it.
+A variable could hold an associative/index array and it is possible to read and to access the elements inside it.
 
-`varname.field`
+```php
+vararray.associndex // vararray['associindex']
+vararray.4 // vararray[4]
+```
 
 * If the element exists then it uses it.
 * If the element doesn't exist then it uses a method of the caller.
@@ -429,6 +432,7 @@ $mini->separate("when condition=1 then field1+10"); // if condition is 1 then it
 
 ## Version
 
+* 2.5 2019-08-03 Now it allows to reference index of an array (numeric or associative)
 * 2.4 2019-08-02 Added more documentation.  Now we allows unitary expression. 
 * 2.3 2019-05-24 Fixed some bug (if the method is not defined)
 * 2.0 2019-05-20 Second version. It uses PHP to parse the file.   
