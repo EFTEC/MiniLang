@@ -353,9 +353,17 @@ $mini->separate("init tmp=50 when condition=1 then field1+10"); // set tmp to 50
 ```
 
 
-## where
+## where 
 
 This part of the expression adds a condition to the statement.
+
+We can also use "when".
+
+> **where** expression    
+
+or
+
+> **when** expression    
 
 It's possible to compare more than a condition at the same time by separating by "and" or "or".
 
@@ -387,6 +395,14 @@ It's possible to compare more than a condition at the same time by separating by
 ## set
 
 This part of the expression allows to set the value of a variable.  It is possible to set more than one variable at the same time by separating by "," or "and".
+
+We can also use "then".
+
+> **set** expression    
+
+or
+
+> **then** expression    
 
 > SET is only executed if WHERE is valid
 
