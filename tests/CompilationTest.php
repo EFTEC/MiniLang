@@ -47,7 +47,9 @@ class CompilationTest extends AbstractMiniLang
      */
     public function testElse()
     {
-        $this->mini->separate("when field1=1 then field2=2 else field2=100 and field3=field1");
+        $this->mini->separate("when field1=1 
+        then field2=2 
+        else field2=100 and field3=field1");
         $caller = new DummyClass();
         $caller->values = ['field1' => 123, 'field2' => 0,'field3'=>111];
         $this->mini->setCaller($caller);

@@ -8,7 +8,7 @@ namespace eftec\minilang;
  *
  * @package  eftec\minilang
  * @author   Jorge Patricio Castro Castillo <jcastro arroba eftec dot cl>
- * @version  2.6 2019-08-03
+ * @version  2.7 2019-08-04
  * * now function allows parameters fnname(1,2,3)
  * * now set allows operators (+,-,*,/). set field=a1+20+40
  * @link     https://github.com/EFTEC/MiniLang
@@ -33,7 +33,7 @@ class MiniLang
      *
      * @var array
      */
-    var $else = [];    
+    var $else = [];
     /**
      * Init operators (if any)
      *
@@ -65,7 +65,7 @@ class MiniLang
      * @param array       $areaName   It marks special areas that could be called as "<namearea> somevalue"
      * @param null|object $serviceClass
      */
-    public function __construct(&$caller, &$dict, array $specialCom = [], $areaName = [], $serviceClass = null)
+    public function __construct($caller, &$dict, array $specialCom = [], $areaName = [], $serviceClass = null)
     {
         $this->specialCom = $specialCom;
         $this->areaName = $areaName;
@@ -96,7 +96,7 @@ class MiniLang
     /**
      * @param object $caller
      */
-    public function setCaller(&$caller)
+    public function setCaller($caller)
     {
         $this->caller = $caller;
     }
@@ -112,7 +112,9 @@ class MiniLang
     /**
      * It sends an expression to the MiniLang and it is decomposed in its parts. The script is not executed but parsed.
      *
-     * @param $miniScript
+     * @param string $miniScript Example: "when $field1>0 then $field1=3 and field2=20"
+     *
+     * @see \eftec\minilang\MiniLang::serialize To pre-calculate this result and improve the performance.
      */
     public function separate($miniScript)
     {
@@ -123,7 +125,7 @@ class MiniLang
         $this->else[$this->langCounter] = [];
         $this->init[$this->langCounter] = [];
         $rToken = token_get_all("<?php " . $miniScript);
-        
+
         $rToken[] = ''; // avoid last operation
         $count = count($rToken) - 1;
         $first = true;
@@ -132,7 +134,7 @@ class MiniLang
         $position = 'init';
         for ($i = 0; $i < $count; $i++) {
             $v = $rToken[$i];
-            $rTokenNext=$rToken[$i+1];
+            $rTokenNext = $rToken[$i + 1];
             if (is_array($v)) {
                 switch ($v[0]) {
                     case T_CONSTANT_ENCAPSED_STRING:
@@ -146,12 +148,12 @@ class MiniLang
                         }
                         break;
                     case T_VARIABLE:
-                        if(is_array($rTokenNext)) {
+                        if (is_array($rTokenNext)) {
                             // fix for $aaa.2 
-                            if($rTokenNext[0]==T_DNUMBER && substr($rTokenNext[1],0,1)=='.') {
-                                $rToken[$i+2]=[T_STRING,substr($rTokenNext[1],1)];
-                                $rTokenNext='.';
-                            } 
+                            if ($rTokenNext[0] == T_DNUMBER && substr($rTokenNext[1], 0, 1) == '.') {
+                                $rToken[$i + 2] = [T_STRING, substr($rTokenNext[1], 1)];
+                                $rTokenNext = '.';
+                            }
                         }
                         if (is_string($rTokenNext) && $rTokenNext == '.') {
                             // $var.vvv
@@ -212,17 +214,17 @@ class MiniLang
                                     $first = true;
                                     break;
                                 case 'else':
-                                    
+
                                     //adding a new else
                                     $position = 'else';
                                     $first = true;
-                                    break;                                    
+                                    break;
                                 default:
-                                    if(is_array($rTokenNext)) {
+                                    if (is_array($rTokenNext)) {
                                         // fix for $aaa.2 
-                                        if($rTokenNext[0]==T_DNUMBER && substr($rTokenNext[1],0,1)=='.') {
-                                            $rToken[$i+2]=[T_STRING,substr($rTokenNext[1],1)];
-                                            $rTokenNext='.';
+                                        if ($rTokenNext[0] == T_DNUMBER && substr($rTokenNext[1], 0, 1) == '.') {
+                                            $rToken[$i + 2] = [T_STRING, substr($rTokenNext[1], 1)];
+                                            $rTokenNext = '.';
                                         }
                                     }
                                     if (is_string($rTokenNext)) {
@@ -348,7 +350,9 @@ class MiniLang
         $prev = true;
         $r = false;
         $addType = '';
-        if (count($this->where[$idx]) === 0) return true; // no where = true
+        if (count($this->where[$idx]) === 0) {
+            return true;
+        } // no where = true
         foreach ($this->where[$idx] as $k => $v) {
             if ($v[0] === 'pair') {
                 if ($v[1] == 'special') {
@@ -427,9 +431,11 @@ class MiniLang
             }
             if ($this->evalLogic($i)) {
                 $this->evalSet($i);
-                if ($stopOnFound) break;
+                if ($stopOnFound) {
+                    break;
+                }
             } else {
-                $this->evalSet($i,'else');
+                $this->evalSet($i, 'else');
             }
         }
     }
@@ -437,14 +443,14 @@ class MiniLang
     /**
      * It sets a value or values. It does not consider if WHERE is true or not.
      *
-     * @param int    $idx number of expression
+     * @param int    $idx      number of expression
      * @param string $position =['set','else','init'][$i]
      *
      * @return void
      */
     public function evalSet($idx = 0, $position = 'set')
     {
-        $position=(!$position)?'init':$position;
+        $position = (!$position) ? 'init' : $position;
         $exp = $this->{$position}[$idx];
         foreach ($exp as $k => $v) {
             if ($v[0] === 'pair') {
@@ -621,7 +627,7 @@ class MiniLang
                 }
             }
             if (is_array($args[0])) {
-                
+
                 // the call is the form nameFunction(somevar)=1 or somevar.nameFunction()=1
                 if (isset($args[0][$nameFunction])) {
                     // someobject.field (nameFunction acts as a field name
@@ -672,9 +678,9 @@ class MiniLang
             case 'subvar':
                 // $a.field
                 $rname = @$GLOBALS[$name];
-                if (substr($ext,0,1)==='$') {
+                if (substr($ext, 0, 1) === '$') {
                     // $a.$b
-                    $ext=@$GLOBALS[substr($ext,1)];
+                    $ext = @$GLOBALS[substr($ext, 1)];
                 }
                 $r = (is_object($rname)) ? $rname->{$ext} : $rname[$ext];
                 break;
@@ -790,17 +796,19 @@ class MiniLang
             $this->addParam($position, $type, $name, $ext);
             return;
         }
-        $posexpr=(!$position)?'init':$position;
+        $posexpr = (!$position) ? 'init' : $position;
         if ($first) {
             $this->{$posexpr}[$this->langCounter][] = ['pair', $type, $name, $ext];
         } else {
-            $expr=&$this->{$posexpr}[$this->langCounter];
+            $expr =& $this->{$posexpr}[$this->langCounter];
             $f = count($expr) - 1;
             $f2 = count($expr[$f]);
             $expr[$f][$f2] = $type;
             $expr[$f][$f2 + 1] = $name;
             $expr[$f][$f2 + 2] = $ext;
-            if ($position=='where') $first = true;
+            if ($position == 'where') {
+                $first = true;
+            }
         }
     }
 
@@ -814,7 +822,7 @@ class MiniLang
      */
     private function addParam($position, $type, $name, $ext = null)
     {
-        $position=(!$position)?'init':$position;
+        $position = (!$position) ? 'init' : $position;
         $f = count($this->{$position}[$this->langCounter]) - 1;
         $idx = count($this->{$position}[$this->langCounter][$f]) - 1;
         if (!isset($this->{$position}[$this->langCounter][$f][$idx])) {
@@ -832,7 +840,7 @@ class MiniLang
      */
     private function addOp($position, &$first, $opName)
     {
-        $position=(!$position)?'init':$position;
+        $position = (!$position) ? 'init' : $position;
         if ($first) {
             $f = count($this->{$position}[$this->langCounter]) - 1;
             $this->{$position}[$this->langCounter][$f][4] = $opName;
@@ -853,11 +861,52 @@ class MiniLang
     private function addLogic($position, &$first, $name)
     {
         if ($first) {
-            $position=(!$position)?'init':$position;
+            $position = (!$position) ? 'init' : $position;
             $this->{$position}[$this->langCounter][] = ['logic', $name];
         } else {
             trigger_error("Error: Logic operation in the wrong place");
         }
 
     }
+
+    /**
+     * It serializes the current minilang. It doesn't serialize the caller or service class.<br>
+     * This method could be used to speed up the process, especially the function separate()<br>
+     * separate() parse the text and it converts into an array. We could pre-calculate
+     * the result to improve the performance.
+     *
+     * @return string The current object serialized
+     *
+     * @see \eftec\minilang\MiniLang::separate
+     */
+    public function serialize()
+    {
+        $tmpCaller = $this->caller;
+        $tmpService = $this->serviceClass;
+        $this->caller = null;
+        $this->serviceClass = null;
+        $result = serialize($this);
+        $this->caller = $tmpCaller;
+        $this->serviceClass = $tmpService;
+        return $result;
+    }
+
+    /**
+     * Unserialize an object serialized by the method serialize()
+     *
+     * @param string $serializeText
+     * @param object $caller
+     * @param object $serviceClass
+     *
+     * @return MiniLang
+     */
+    public static function unserialize($serializeText, $caller, $serviceClass = null)
+    {
+        /** @var MiniLang $obj */
+        $obj = unserialize($serializeText);
+        $obj->caller = $caller;
+        $obj->serviceClass = $serviceClass;
+        return $obj;
+    }
+
 }

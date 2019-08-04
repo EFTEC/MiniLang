@@ -456,7 +456,10 @@ This optional part of the expression allows setting the value of a variable.  It
 
 ## Version
 
-* 2.6 2019-08-03 Now it allows "else"
+* 2.7 2019-08-04 
+* * Added the methods serialize() and unserialize().
+* * setCaller() argument is not a reference anymore (objects are reference by default)
+* 2.6 2019-08-03 Now it allows "else". Example: "where exp then exp else exp"
 * 2.5 2019-08-03 Now it allows to reference index of an array (numeric or associative)
 * 2.4 2019-08-02 Added more documentation.  Now we allow unitary expression. 
 * 2.3 2019-05-24 Fixed some bug (if the method is not defined)
