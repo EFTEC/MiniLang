@@ -428,13 +428,21 @@ This library does not allow complex instruction such as
 
 > set variable1=20 and $variable2=variable3 and function(20)=40
 
-
-
 ### Code:
 
 ```php
 $mini->separate("when condition=1 then field1+10"); // if condition is 1 then it increases the field1 by 10.
 ```
+
+## else
+
+This optional part of the expression allows to set the value of a variable.  It is possible to set more than one variable at the same time by separating by "," or "and".
+
+> This code is only evaluated if "where" returns false of if else is called manually.
+
+### Example
+
+> else variable1=20 and $variable2=variable3 and function(20)=40
 
 
 ## Documentation
@@ -448,6 +456,7 @@ $mini->separate("when condition=1 then field1+10"); // if condition is 1 then it
 
 ## Version
 
+* 2.6 2019-08-03 Now it allows "else"
 * 2.5 2019-08-03 Now it allows to reference index of an array (numeric or associative)
 * 2.4 2019-08-02 Added more documentation.  Now we allows unitary expression. 
 * 2.3 2019-05-24 Fixed some bug (if the method is not defined)

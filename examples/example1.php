@@ -22,6 +22,12 @@ $mini->separate('when true() then field3=countries.us');
 $mini->separate("when field1=2 then field2=4");
 
 
+
+// var_dump($mini->where);
+//var_dump($mini->set);
+//
+//die(1);
+
 if ($mini->evalLogic()) {
 	$mini->evalSet();
 }

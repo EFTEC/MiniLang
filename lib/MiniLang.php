@@ -8,7 +8,7 @@ namespace eftec\minilang;
  *
  * @package  eftec\minilang
  * @author   Jorge Patricio Castro Castillo <jcastro arroba eftec dot cl>
- * @version  2.5 2019-08-03
+ * @version  2.6 2019-08-03
  * * now function allows parameters fnname(1,2,3)
  * * now set allows operators (+,-,*,/). set field=a1+20+40
  * @link     https://github.com/EFTEC/MiniLang
@@ -23,13 +23,19 @@ class MiniLang
      */
     var $where = [];
     /**
-     * Set operators (if any
+     * Set operators (if any)
      *
      * @var array
      */
     var $set = [];
     /**
-     * Set operators (if any
+     * Set operators (if any)
+     *
+     * @var array
+     */
+    var $else = [];    
+    /**
+     * Init operators (if any)
      *
      * @var array
      */
@@ -69,6 +75,7 @@ class MiniLang
         $this->langCounter = -1;
         $this->where = [];
         $this->set = [];
+        $this->else = [];
         $this->init = [];
 
     }
@@ -81,6 +88,7 @@ class MiniLang
         $this->langCounter = -1;
         $this->where = [];
         $this->set = [];
+        $this->else = [];
         $this->init = [];
 
     }
@@ -112,13 +120,15 @@ class MiniLang
 
         $this->where[$this->langCounter] = [];
         $this->set[$this->langCounter] = [];
+        $this->else[$this->langCounter] = [];
         $this->init[$this->langCounter] = [];
         $rToken = token_get_all("<?php " . $miniScript);
+        
         $rToken[] = ''; // avoid last operation
         $count = count($rToken) - 1;
         $first = true;
         $inFunction = false;
-        /** @var  string $position =['where','set','init'][$i] */
+        /** @var  string $position =['where','set','else','init'][$i] */
         $position = 'init';
         for ($i = 0; $i < $count; $i++) {
             $v = $rToken[$i];
@@ -158,6 +168,11 @@ class MiniLang
                         $this->addBinOper($first, $position, $inFunction, 'number'
                             , $v[1], null);
                         break;
+                    case T_ELSE:
+                        //adding a new else
+                        $position = 'else';
+                        $first = true;
+                        break;
                     case T_STRING:
                         if (in_array($v[1], $this->areaName)) {
                             // its an area. <area> <somvalue>
@@ -196,6 +211,12 @@ class MiniLang
                                     $position = 'set';
                                     $first = true;
                                     break;
+                                case 'else':
+                                    
+                                    //adding a new else
+                                    $position = 'else';
+                                    $first = true;
+                                    break;                                    
                                 default:
                                     if(is_array($rTokenNext)) {
                                         // fix for $aaa.2 
@@ -405,10 +426,10 @@ class MiniLang
                 $this->evalSet($i, 'init');
             }
             if ($this->evalLogic($i)) {
-
                 $this->evalSet($i);
-
                 if ($stopOnFound) break;
+            } else {
+                $this->evalSet($i,'else');
             }
         }
     }
@@ -417,15 +438,14 @@ class MiniLang
      * It sets a value or values. It does not consider if WHERE is true or not.
      *
      * @param int    $idx number of expression
-     * @param string $position =['set','init'][$i]
+     * @param string $position =['set','else','init'][$i]
      *
      * @return void
      */
     public function evalSet($idx = 0, $position = 'set')
     {
-        $exp = ($position == 'set') ? $this->set[$idx]
-            : $this->init[$idx];
-
+        $position=(!$position)?'init':$position;
+        $exp = $this->{$position}[$idx];
         foreach ($exp as $k => $v) {
             if ($v[0] === 'pair') {
                 $name = $v[2];
@@ -754,10 +774,11 @@ class MiniLang
     }
 
     /**
-     * It adds part of a pair of operation.
+     * It adds a part of a pair of operation.
+     * <p>"value=20" where value is the first part and 20 is the second part<p>
      *
      * @param bool        $first    if it is the first part or second part of the expression.
-     * @param string      $position =['where','set','init'][$i]
+     * @param string      $position =['where','set','else','init'][$i]
      * @param bool        $inFunction
      * @param string      $type     =['string','stringp','var','subvar','number','field','subfield','fn','special'][$i]
      * @param string      $name     name of the field
@@ -769,158 +790,71 @@ class MiniLang
             $this->addParam($position, $type, $name, $ext);
             return;
         }
+        $posexpr=(!$position)?'init':$position;
         if ($first) {
-            switch ($position) {
-                case 'where':
-                    $this->where[$this->langCounter][] = ['pair', $type, $name, $ext];
-                    break;
-                case 'set':
-                    $this->set[$this->langCounter][] = ['pair', $type, $name, $ext];
-                    break;
-                case '':
-                case 'init':
-                    $this->init[$this->langCounter][] = ['pair', $type, $name, $ext];
-                    break;
-            }
+            $this->{$posexpr}[$this->langCounter][] = ['pair', $type, $name, $ext];
         } else {
-
-            switch ($position) {
-                case 'where':
-                    $f = count($this->where[$this->langCounter]) - 1;
-                    $f2 = count($this->where[$this->langCounter][$f]);
-                    $this->where[$this->langCounter][$f][$f2] = $type;
-                    $this->where[$this->langCounter][$f][$f2 + 1] = $name;
-                    $this->where[$this->langCounter][$f][$f2 + 2] = $ext;
-                    $first = true;
-                    break;
-                case 'set':
-                    $f = count($this->set[$this->langCounter]) - 1;
-                    $f2 = count($this->set[$this->langCounter][$f]);
-                    
-                    $this->set[$this->langCounter][$f][$f2] = $type;
-                    $this->set[$this->langCounter][$f][$f2 + 1] = $name;
-                    $this->set[$this->langCounter][$f][$f2 + 2] = $ext;
-                    break;
-                case '':
-                case 'init':
-                    $f = count($this->init[$this->langCounter]) - 1;
-                    $f2 = count($this->init[$this->langCounter][$f]);
-                    $this->init[$this->langCounter][$f][$f2] = $type;
-                    $this->init[$this->langCounter][$f][$f2 + 1] = $name;
-                    $this->init[$this->langCounter][$f][$f2 + 2] = $ext;
-                    break;
-            }
+            $expr=&$this->{$posexpr}[$this->langCounter];
+            $f = count($expr) - 1;
+            $f2 = count($expr[$f]);
+            $expr[$f][$f2] = $type;
+            $expr[$f][$f2 + 1] = $name;
+            $expr[$f][$f2 + 2] = $ext;
+            if ($position=='where') $first = true;
         }
     }
 
     /**
      * Add params of a function
      *
-     * @param string      $position =['where','set','init'][$i]
+     * @param string      $position =['where','set','else','init'][$i]
      * @param string      $type     =['string','stringp','var','subvar','number','field','subfield','fn','special'][$i]
      * @param string      $name     name of the field
      * @param null|string $ext      extra parameter.
      */
     private function addParam($position, $type, $name, $ext = null)
     {
-        switch ($position) {
-            case 'where':
-                $f = count($this->where[$this->langCounter]) - 1;
-                $idx = count($this->where[$this->langCounter][$f]) - 1;
-                if (!isset($this->where[$this->langCounter][$f][$idx])) {
-                    $this->where[$this->langCounter][$f][$idx] = [];
-
-                }
-                $this->where[$this->langCounter][$f][$idx][] = [$type, $name, $ext];
-                break;
-            case 'set':
-                $f = count($this->set[$this->langCounter]) - 1;
-                $idx = count($this->set[$this->langCounter][$f]) - 1;
-                if (!isset($this->set[$this->langCounter][$f][$idx])) {
-                    $this->set[$this->langCounter][$f][$idx] = [];
-                }
-                $this->set[$this->langCounter][$f][$idx][] = [$type, $name, $ext];
-                break;
-            case '':
-            case 'init':
-                $f = count($this->init[$this->langCounter]) - 1;
-                $idx = count($this->init[$this->langCounter][$f]) - 1;
-                if (!isset($this->init[$this->langCounter][$f][$idx])) {
-                    $this->init[$this->langCounter][$f][$idx] = [];
-
-                }
-                $this->init[$this->langCounter][$f][$idx][] = [$type, $name, $ext];
-                break;
+        $position=(!$position)?'init':$position;
+        $f = count($this->{$position}[$this->langCounter]) - 1;
+        $idx = count($this->{$position}[$this->langCounter][$f]) - 1;
+        if (!isset($this->{$position}[$this->langCounter][$f][$idx])) {
+            $this->{$position}[$this->langCounter][$f][$idx] = [];
         }
+        $this->{$position}[$this->langCounter][$f][$idx][] = [$type, $name, $ext];
     }
 
     /**
      * It adds an operation (such as =,<,+,etc.)
      *
-     * @param string $position =['where','set','init'][$i]
+     * @param string $position =['where','set','else','init'][$i]
      * @param bool   $first    If it's true then it is the first value of a binary
      * @param string $opName
      */
     private function addOp($position, &$first, $opName)
     {
-        switch ($position) {
-            case 'where':
-                if ($first) {
-                    $f = count($this->where[$this->langCounter]) - 1;
-                    $this->where[$this->langCounter][$f][4] = $opName;
-                    $first = false;
-                } else {
-                    $f = count($this->where[$this->langCounter]) - 1;
-                    $this->where[$this->langCounter][$f][] = $opName;
-                }
-                break;
-            case 'set':
-                if ($first) {
-                    $f = count($this->set[$this->langCounter]) - 1;
-                    $this->set[$this->langCounter][$f][4] = $opName;
-                    $first = false;
-                } else {
-                    $f = count($this->set[$this->langCounter]) - 1;
-                    $this->set[$this->langCounter][$f][] = $opName;
-                }
-                break;
-            case '':
-            case 'init':
-                if ($first) {
-                    $f = count($this->init[$this->langCounter]) - 1;
-                    $this->init[$this->langCounter][$f][4] = $opName;
-                    $first = false;
-                } else {
-                    $f = count($this->init[$this->langCounter]) - 1;
-                    $this->init[$this->langCounter][$f][] = $opName;
-                }
-                break;
+        $position=(!$position)?'init':$position;
+        if ($first) {
+            $f = count($this->{$position}[$this->langCounter]) - 1;
+            $this->{$position}[$this->langCounter][$f][4] = $opName;
+            $first = false;
+        } else {
+            $f = count($this->{$position}[$this->langCounter]) - 1;
+            $this->{$position}[$this->langCounter][$f][] = $opName;
         }
-
     }
 
     /**
      * It adds a logic
      *
-     * @param string $position =['where','set','init'][$i]
+     * @param string $position =['where','set','else','init'][$i]
      * @param bool   $first    If it's true then it is the first value of a binary
      * @param string $name     name of the logic
      */
     private function addLogic($position, &$first, $name)
     {
         if ($first) {
-            switch ($position) {
-                case 'where':
-                    $this->where[$this->langCounter][] = ['logic', $name];
-                    break;
-                case 'set':
-                    $this->set[$this->langCounter][] = ['logic', $name];
-                    break;
-                case '':
-                case 'init':
-                    $this->init[$this->langCounter][] = ['logic', $name];
-                    break;
-            }
+            $position=(!$position)?'init':$position;
+            $this->{$position}[$this->langCounter][] = ['logic', $name];
         } else {
             trigger_error("Error: Logic operation in the wrong place");
         }

@@ -43,6 +43,7 @@ $mini->separate("when field1.id>0 then
 				and processservice(field3)"); // we prepare the language
 
 
+
 $mini->evalAllLogic(false); // we set the variables and run the languageand run the language
 echo "<pre>";
 var_dump($variables);

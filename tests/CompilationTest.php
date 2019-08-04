@@ -45,6 +45,28 @@ class CompilationTest extends AbstractMiniLang
     /**
      * @throws \Exception
      */
+    public function testElse()
+    {
+        $this->mini->separate("when field1=1 then field2=2 else field2=100 and field3=field1");
+        $caller = new DummyClass();
+        $caller->values = ['field1' => 123, 'field2' => 0,'field3'=>111];
+        $this->mini->setCaller($caller);
+        $this->mini->setDict($caller->values);
+
+        if ($this->mini->evalLogic()) {
+            $this->mini->evalSet();
+        } else {
+            $this->mini->evalSet(0,'else');
+        }
+
+        self::assertEquals(100, $caller->values['field2']); // default value
+        self::assertEquals(123, $caller->values['field3']); // default value
+
+    }
+
+    /**
+     * @throws \Exception
+     */
     public function testGlobal()
     {
         global $mivar, $mivar2;
