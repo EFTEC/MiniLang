@@ -1,8 +1,8 @@
 # MiniLang
-A mini script language for PHP.  It does three simple tasks
+A mini script language for PHP.  It does three simple tasks.
 
 1. (optional) It set some initial values **(INIT)**.
-2. It evaluates an logic expression **(WHERE)**.
+2. It evaluates a logic expression **(WHERE)**.
 3. And if the expression (logic) is true then it executes the SET expression **(SET)**.
 
 For example :
@@ -20,15 +20,15 @@ For example :
 [![php](https://img.shields.io/badge/php-7.x-green.svg)]()
 [![CocoaPods](https://img.shields.io/badge/docs-70%25-yellow.svg)]()
 
-## Why we need a miniscript?
+## Why we need a mini script?
 
-Sometimes we need to execute an arbitrary code in basis of "if some value is equals to, then we set or execute another code".
+Sometimes we need to execute arbitrary code in the basis of "if some value equals to, then we set or execute another code."
 
 In PHP, we could do the next code.
 
 ```php
 if($condition) {
-	$variable=1;
+    $variable=1;
 }
 ```
 However, this code is executed at runtime.  What if we need to execute this code at some specific point?.
@@ -37,14 +37,14 @@ We could do the next code:
 
 ```php
 $script='if($condition) {
-	$variable=1;
+    $variable=1;
 }';
 
 // and later..
 eval($script);
 ```
 
-This solution works (and it's only execute if we call the command eval). But it is verbose, prone to error and it's dangerous.
+This solution works (and it only executes if we call the command eval). But it is verbose, prone to error and it's dangerous.
 
 Our library does the same but safe and clean.
 
@@ -81,12 +81,12 @@ var_dump($result);
 * object $caller Indicates the object with the callbacks
 * array $dict Dictionary with initial values
 * array $specialCom Special commands. it calls a function of the caller.
-* array $areaName It marks special areas that could be called as "<namearea> somevalue"
+* array $areaName It marks special areas that could be called as "<namearea> somevalue."
 *null|object $serviceClass A service class. By default, it uses the $caller.
 
 ### reset()
 
-It reset the previous definitions but the variables, service and areas
+It reset the previous definitions but the variables, service and areas.
 
 ### setCaller(&$caller)
 
@@ -98,7 +98,7 @@ Set a dictionary with the variables used by the system.
 
 ### function separate($miniScript)
 
-It sends an expression to the MiniLang and it is decomposed in its parts. The script is not executed but parsed.
+It sends an expression to the MiniLang, and it is decomposed in its parts. The script is not executed but parsed.
 
 ### evalLogic($index)
 
@@ -109,7 +109,7 @@ It evaluates a logic. It returns true or false.
 ### evalAllLogic($stopOnFound = true, $start = false)
 
 * bool $stopOnFound exit if some evaluation matches
-* bool $start       if true then it always evaluates the "init" expression.
+* bool $start if true then it always evaluates the "init" expression.
 
 ### evalSet($idx = 0, $position = 'set')
 
@@ -122,7 +122,7 @@ It sets a value or values. It does not consider if WHERE is true or not.
 
 ### Sintaxis.
 
-The sintaxis of the code is separate in two parts. WHERE (or when) AND SET (or then).
+The syntaxis of the code is separated into four parts. INIT, WHERE (or when), SET (or THEN) and ELSE.
 
 Example:
 
@@ -130,7 +130,7 @@ Example:
 $mini->separate("when field1=1 then field2=2");
 ```
 
-It says, if field1=1 then we set field2 as 2.
+It says if field1=1 then we set field2 as 2.
 
 
 ### Variables
@@ -148,46 +148,46 @@ var_dump($variables); // field1=1, field2=3
 ```
 ### Variables defined by a PHP Object
 
-A variable could host a PHP object and it is possible to call and to access the fields inside it.
+A variable could host a PHP object, and it is possible to call and to access the fields inside it.
 
 `varname.field`
 
-* If the field exists then it uses it.
-* If the field doesn't exist then it uses a method of the caller.
+* If the field exists, then it uses it.
+* If the field doesn't exist, then it uses a method of the caller.
 * If the method of the caller doesn't exist then it tries to use the method of the service class 
-* Finally, if everything fails then it trigges an error.
+* Finally, if everything fails then it triggers an error.
 
 Example of code [examples/examplevariable2.php](examples/examplevariable2.php)
 
 ```php
 class MyModel {
-	var $id=1;
-	var $value="";	
-	public function __construct($id=0, $value="")
-	{
-		$this->id = $id;
-		$this->value = $value;
-	}
+    var $id=1;
+    var $value="";    
+    public function __construct($id=0, $value="")
+    {
+        $this->id = $id;
+        $this->value = $value;
+    }
 }
 class ClassCaller {
-	public function Processcaller($arg) {
-		echo "Caller: setting the variable {$arg->id}<br>";
-	}
+    public function Processcaller($arg) {
+        echo "Caller: setting the variable {$arg->id}<br>";
+    }
 }
 class ClassService {
-	public function ProcessService($arg) {
-		echo "Service: setting the variable {$arg->id}<br>";
-	}
+    public function ProcessService($arg) {
+        echo "Service: setting the variable {$arg->id}<br>";
+    }
 }
 $mini=new MiniLang([],[],new ClassService());
 $mini->separate("when field1.id>0 then 
-				field2.value=3 
-				and field3.processcaller 
-				and processcaller(field3) 
-				and processservice(field3)"); // we prepare the language
+                field2.value=3 
+                and field3.processcaller 
+                and processcaller(field3) 
+                and processservice(field3)"); // we prepare the language
 $variables=['field1'=>new MyModel(1,"hi")
-			,'field2'=>new MyModel(2,'')
-			,'field3'=>new MyModel(3,'')]; // we define regular variables
+            ,'field2'=>new MyModel(2,'')
+            ,'field3'=>new MyModel(3,'')]; // we define regular variables
 $callback=new ClassCaller();
 $mini->evalAllLogic($callback,$variables,false); // we set the variables and run the languageand run the language
 var_dump($variables);
@@ -200,42 +200,42 @@ var_dump($variables);
 
 ### Variables defined by a PHP array
 
-A variable could hold an associative/index array and it is possible to read and to access the elements inside it.
+A variable could hold an associative/index array, and it is possible to read and to access the elements inside it.
 
 ```php
 vararray.associndex // vararray['associindex']
 vararray.4 // vararray[4]
 ```
 
-* If the element exists then it uses it.
-* If the element doesn't exist then it uses a method of the caller.
+* If the element exists, then it uses it.
+* If the element doesn't exist, then it uses a method of the caller.
 * If the method of the caller doesn't exist then it tries to use the method of the service class 
-* Finally, if everything fails then it trigges an error.
+* Finally, if everything fails then it triggers an error.
 
 Example of code [examples/examplevariable_arr.php](examples/examplevariable_arr.php)
 
 ```php
 class ClassCaller {
-	public function Processcaller($arg) {
-		echo "Caller: setting the variable {$arg['id']}<br>";
-	}
+    public function Processcaller($arg) {
+        echo "Caller: setting the variable {$arg['id']}<br>";
+    }
 }
 class ClassService {
-	public function ProcessService($arg) {
-		echo "Service: setting the variable {$arg['id']}<br>";
-	}
+    public function ProcessService($arg) {
+        echo "Service: setting the variable {$arg['id']}<br>";
+    }
 }
 
 $mini=new MiniLang([],[],new ClassService());
 $mini->separate("when field1.id>0 then 
-				field2.value=3 
-				and field3.processcaller 
-				and processcaller(field3) 
-				and processservice(field3)"); 
+                field2.value=3 
+                and field3.processcaller 
+                and processcaller(field3) 
+                and processservice(field3)"); 
 
 $variables=['field1'=>['id'=>1,'value'=>3]
-	   ,'field2'=>['id'=>2,'value'=>'']
-  	   ,'field3'=>['id'=>3,'value'=>'']]; 
+       ,'field2'=>['id'=>2,'value'=>'']
+         ,'field3'=>['id'=>3,'value'=>'']]; 
 $callback=new ClassCaller();
 $mini->evalAllLogic($callback,$variables,false);
 var_dump($variables);
@@ -249,7 +249,7 @@ var_dump($variables);
 
 ### Global variables
 
-A global variable, takes the values of the PHP ($GLOBAL), so it doesn't need to be defined or set inside the language
+A global variable takes the values of the PHP ($GLOBAL), so it doesn't need to be defined or set inside the language
 
 A global variable is defined by
 
@@ -316,15 +316,15 @@ var_dump($variables);
 Example Timer: [examples/examplereservedtimer.php](examples/examplereservedtimer.php)  
 ```php
 class ClassWithTimer {
-	var $dateLastChange;
-	public function dateInit() {
-		return time();
-	}
-	public function __construct()
-	{
-		$this->dateLastChange=time();
-		
-	}
+    var $dateLastChange;
+    public function dateInit() {
+        return time();
+    }
+    public function __construct()
+    {
+        $this->dateLastChange=time();
+        
+    }
 }
 $mini=new MiniLang();
 $mini->separate("when true=true then field1=interval() and field2=fullinterval()"); // we prepare the language
@@ -336,15 +336,15 @@ var_dump($variables);
 
 ## init
 
-This part of the expression allows to set a value. This expression is usually optional and it could be ommited.
+This part of the expression allows setting a value. This expression is usually optional, and it could be omitted.
 
-> It is similar to SET but it is executed before WHERE and no matter if WHERE is valid or not.
+> It is similar to SET, but it is executed before WHERE and no matter if WHERE is valid or not.
 
 > **init counter=20** where variable1=20 set variable+counter 
 
 * it set the counter to 20.
-* And compares: variable1 is equals to 20
-* If yes, then increases variable by counter
+* And compares: variable1 is equaled to 20
+* If yes, then increases a variable by counter
 
 ### Code:
 
@@ -357,7 +357,7 @@ $mini->separate("init tmp=50 when condition=1 then field1+10"); // set tmp to 50
 
 This part of the expression adds a condition to the statement.
 
-We can also use "when".
+We can also use "when."
 
 > **where** expression    
 
@@ -365,7 +365,7 @@ or
 
 > **when** expression    
 
-It's possible to compare more than a condition at the same time by separating by "and" or "or".
+It's possible to compare more than a condition at the same time by separating by "and" or "or."
 
 > where v1=10 and v2=20 or v3<50
 
@@ -379,7 +379,7 @@ It's possible to compare more than a condition at the same time by separating by
 
 > where 1 // it always true
 
-### Expresions allowed
+### Expressions allowed
 
 * **equals:**  = and ==
 * **not equals:** <> and !=
@@ -394,9 +394,9 @@ It's possible to compare more than a condition at the same time by separating by
 
 ## set
 
-This part of the expression allows to set the value of a variable.  It is possible to set more than one variable at the same time by separating by "," or "and".
+This part of the expression allows setting the value of a variable.  It is possible to set more than one variable at the same time by separating by "," or "and."
 
-We can also use "then".
+We can also use "then."
 
 > **set** expression    
 
@@ -408,7 +408,7 @@ or
 
 It is also possible to set a function. However, the value could not be set (but the function is executed)
 
-### Expresions allowed
+### Expressions allowed
 
 We could set a variable using the next expressions:
 
@@ -436,9 +436,9 @@ $mini->separate("when condition=1 then field1+10"); // if condition is 1 then it
 
 ## else
 
-This optional part of the expression allows to set the value of a variable.  It is possible to set more than one variable at the same time by separating by "," or "and".
+This optional part of the expression allows setting the value of a variable.  It is possible to set more than one variable at the same time by separating by "," or "and".
 
-> This code is only evaluated if "where" returns false of if else is called manually.
+> This code is only evaluated if "where" returns false of if ELSE is called manually.
 
 ### Example
 
@@ -458,9 +458,9 @@ This optional part of the expression allows to set the value of a variable.  It 
 
 * 2.6 2019-08-03 Now it allows "else"
 * 2.5 2019-08-03 Now it allows to reference index of an array (numeric or associative)
-* 2.4 2019-08-02 Added more documentation.  Now we allows unitary expression. 
+* 2.4 2019-08-02 Added more documentation.  Now we allow unitary expression. 
 * 2.3 2019-05-24 Fixed some bug (if the method is not defined)
 * 2.0 2019-05-20 Second version. It uses PHP to parse the file.   
-* 1.15 2019-01-06 If we add (+) two values and they are numeric then we add, otherwise we concantenate.  
-* 1.14 2018-12-26 First open source version.   
+* 1.15 2019-01-06 If we add (+) two values and they are numeric then we add. Otherwise, it concatenates.  
+* 1.14 2018-12-26 First open-source version.   
 
