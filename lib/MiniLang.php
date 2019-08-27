@@ -8,9 +8,7 @@ namespace eftec\minilang;
  *
  * @package  eftec\minilang
  * @author   Jorge Patricio Castro Castillo <jcastro arroba eftec dot cl>
- * @version  2.7 2019-08-04
- * * now function allows parameters fnname(1,2,3)
- * * now set allows operators (+,-,*,/). set field=a1+20+40
+ * @version  2.8 2019-08-26
  * @link     https://github.com/EFTEC/MiniLang
  * @license  LGPL v3 (or commercial if it's licensed)
  */
@@ -63,13 +61,13 @@ class MiniLang
      * @param array       $dict
      * @param array       $specialCom Special commands. it calls a function of the caller.
      * @param array       $areaName   It marks special areas that could be called as "<namearea> somevalue"
-     * @param null|object $serviceClass
+     * @param null|object $serviceObject
      */
-    public function __construct($caller, &$dict, array $specialCom = [], $areaName = [], $serviceClass = null)
+    public function __construct($caller, &$dict, array $specialCom = [], $areaName = [], $serviceObject = null)
     {
         $this->specialCom = $specialCom;
         $this->areaName = $areaName;
-        $this->serviceClass = $serviceClass;
+        $this->serviceClass = $serviceObject;
         $this->dict =& $dict;
         $this->caller =& $caller;
         $this->langCounter = -1;
@@ -102,11 +100,24 @@ class MiniLang
     }
 
     /**
-     * @param array $dict
+     * It sets the whole dictionary. 
+     * 
+     * @param array $dict This value is passes as reference so it returns the modified values.
      */
     public function setDict(&$dict)
     {
         $this->dict = &$dict;
+    }
+
+    /**
+     * It returns the value of a index of the dictionary
+     * 
+     * @param string $name name of the index of the dictionary
+     *
+     * @return mixed 
+     */
+    public function getDictEntry($name) {
+        return @$this->dict[$name];
     }
 
     /**
@@ -562,12 +573,16 @@ class MiniLang
      */
     private function callFunction($nameFunction, $args)
     {
-        if (count($args) === 1) {
+        if (count($args) >=1) {
             if (is_object($args[0])) {
                 // the call is the form nameFunction(somevar) or somevar.nameFunction()
                 if (isset($args[0]->{$nameFunction})) {
                     // someobject.field (nameFunction acts as a field name)
                     return $args[0]->{$nameFunction};
+                } else {
+                    $cp = $args;
+                    unset($cp[0]); // it avoids to pass the name of the function as argument
+                    return $args[0]->{$nameFunction}(...$cp); //(...$cp);
                 }
             }
             if (is_array($args[0])) {
@@ -595,6 +610,9 @@ class MiniLang
         if (method_exists($this->serviceClass, $nameFunction)) {
             return call_user_func_array(array($this->serviceClass, $nameFunction), $args);
         } else {
+            if (function_exists($nameFunction)) {
+                return call_user_func($nameFunction,$args);
+            }
             trigger_error("function [$nameFunction] is not defined");
             return false;
         }
@@ -768,7 +786,7 @@ class MiniLang
 
     public function getValueP($string)
     {
-        return preg_replace_callback('/\{\{\s?(\w+)\s?\}\}/u', function ($matches) {
+        return preg_replace_callback('/{\{\s?(\w+)\s?\}\}/u', function ($matches) {
             if (is_array($matches)) {
                 $item = substr($matches[0], 2, strlen($matches[0]) - 4); // removes {{ and }}
                 return @$this->dict[$item];

@@ -8,8 +8,9 @@ class DummyClass
 {
     var $values = [];
 
-    public function test()
+    public function testMethod()
     {
+        echo "calling method";
         return 1;
     }
 
@@ -91,9 +92,9 @@ class CompilationTest extends AbstractMiniLang
     /**
      * @throws \Exception
      */
-    public function testFn()
+    public function testServiceClass()
     {
-        $this->mini->separate("when 1=1 then field2=test()");
+        $this->mini->separate("when testmethod()=1 then field2=testmethod()");
         $caller = new DummyClass();
         $caller->values = ['field1' => 1, 'field2' => 0, 'field3' => 0, 'field4' => 0];
         $this->mini->setCaller($caller);
@@ -105,7 +106,23 @@ class CompilationTest extends AbstractMiniLang
         self::assertEquals(1, $caller->values['field2'], 'field2 must be 1'); // default value
 
     }
+    /**
+     * @throws \Exception
+     */
+    public function testMethod()
+    {
+        $this->mini->separate("when obj.testmethod(1)=obj.testmethod() then field2=123");
+        
+        $values= ['obj' => new DummyClass(), 'field2' => 0, 'field3' => 0, 'field4' => 0];
+        $this->mini->setDict($values);
 
+        if ($this->mini->evalLogic()) {
+            $this->mini->evalSet();
+        }
+        self::assertEquals(123, $this->mini->getDictEntry('field2'), 'field2 must be 123'); // default value
+        self::assertEquals(123, $values['field2'], 'field2 must be 123'); // default value
+
+    }
     /**
      * @throws \Exception
      */

@@ -456,6 +456,9 @@ This optional part of the expression allows setting the value of a variable.  It
 
 ## Version
 
+* 2.8 2019-08-26
+* *  if a field (inside where section) is an object. then it is possible to call the method as field.method(arg)
+* *  Method getDictEntry() 
 * 2.7 2019-08-04 
 * * Added the methods serialize() and unserialize().
 * * setCaller() argument is not a reference anymore (objects are reference by default)
