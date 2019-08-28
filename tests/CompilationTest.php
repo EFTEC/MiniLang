@@ -220,12 +220,12 @@ class CompilationTest extends AbstractMiniLang
         self::assertEquals('it is a value 1,12345', $caller->values['field4']);
     }
 
-    public function test4()
+    public function testArrays()
     {
         global $countries;
         global $arrays;
         $caller = new DummyClass();
-        $countries = ['us' => 'usa', 'ca' => 'canada'];
+        $countries = ['first','us' => 'usa', 'ca' => 'canada'];
         $arrays = [100, 200, 300, 400];
         $caller->values = [
             'field1' => 1,
@@ -241,14 +241,19 @@ class CompilationTest extends AbstractMiniLang
         $this->mini->separate("when field1=1 then field2=countries.us");
         $this->mini->separate("when field1=1 then field3=arrays.1");
         $this->mini->separate('when field1=1 then field4=$countries.us');
-        $this->mini->separate('when field1=1 then field5=$arrays.1');        
+        $this->mini->separate('when field1=1 then field5=$arrays.1');
+        //$this->mini->separate('when field1=1 then countries.0="mexico"');
+        $this->mini->separate('when field1=1 then countries.us="mexico"'); // us now is mexico
+        $this->mini->separate('when countries.us="mexico" then countries.ca="mexico"'); // if us is mexico then ca is mexico too
         $this->mini->setCaller($caller);
         $this->mini->setDict($caller->values);
         $this->mini->evalAllLogic(false);
         self::assertEquals('usa', $caller->values['field2']);
         self::assertEquals(200, $caller->values['field3']); 
         self::assertEquals('usa', $caller->values['field4']);
-        self::assertEquals(200, $caller->values['field5']);         
-
+        self::assertEquals(200, $caller->values['field5']);
+        //self::assertEquals('mexico', $caller->values['countries'][0]);
+        self::assertEquals('mexico', $caller->values['countries']['us']);
+        self::assertEquals('mexico', $caller->values['countries']['ca']);
     }
 }

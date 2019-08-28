@@ -456,6 +456,8 @@ This optional part of the expression allows setting the value of a variable.  It
 
 ## Version
 
+* 2.9 2019-08-28
+* * set field.value=20 , where field is an array works.  However field.1=20 does not work (the parser considers .1 as a decimal)
 * 2.8 2019-08-26
 * *  if a field (inside where section) is an object. then it is possible to call the method as field.method(arg)
 * *  Method getDictEntry() 

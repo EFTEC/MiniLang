@@ -8,7 +8,7 @@ namespace eftec\minilang;
  *
  * @package  eftec\minilang
  * @author   Jorge Patricio Castro Castillo <jcastro arroba eftec dot cl>
- * @version  2.8 2019-08-26
+ * @version  2.9 2019-08-28
  * @link     https://github.com/EFTEC/MiniLang
  * @license  LGPL v3 (or commercial if it's licensed)
  */
@@ -242,6 +242,7 @@ class MiniLang
                                         if ($rTokenNext == '.') {
                                             if (@$rToken[$i + 3] != '(') {
                                                 // field.vvv
+                                         
                                                 $this->addBinOper($first, $position, $inFunction, 'subfield', $v[1],
                                                     $rToken[$i + 2][1]);
                                                 $i += 2;
@@ -542,7 +543,9 @@ class MiniLang
                         }
                         break;
                     case 'subfield':
-                        $args = [$this->dict[$name]];
+                        // field.value=
+                        // field.value()=
+                        $args = [&$this->dict[$name]];
                         $this->callFunctionSet($ext, $args, $field1);
                         break;
                     case 'fn':
@@ -619,13 +622,15 @@ class MiniLang
     }
 
     /**
+     * Example: field2.value=20  namefunction=value,setvalue=20,args
+     * 
      * @param string $nameFunction
      * @param        $args
      * @param        $setValue
      *
      * @return void
      */
-    private function callFunctionSet($nameFunction, $args, $setValue)
+    private function callFunctionSet($nameFunction, &$args, $setValue)
     {
         if (count($args) >= 1) {
             if (is_object($args[0])) {
@@ -645,7 +650,6 @@ class MiniLang
                 }
             }
             if (is_array($args[0])) {
-
                 // the call is the form nameFunction(somevar)=1 or somevar.nameFunction()=1
                 if (isset($args[0][$nameFunction])) {
                     // someobject.field (nameFunction acts as a field name
