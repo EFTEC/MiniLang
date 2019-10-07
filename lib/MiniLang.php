@@ -8,7 +8,7 @@ namespace eftec\minilang;
  *
  * @package  eftec\minilang
  * @author   Jorge Patricio Castro Castillo <jcastro arroba eftec dot cl>
- * @version  2.9 2019-08-28
+ * @version  2.10 2019-10-07
  * @link     https://github.com/EFTEC/MiniLang
  * @license  LGPL v3 (or commercial if it's licensed)
  */
@@ -119,7 +119,19 @@ class MiniLang
     public function getDictEntry($name) {
         return @$this->dict[$name];
     }
-
+    /**
+     * It creates a command using a previously separate set
+     * @param array $where
+     * @param array $set
+     * @param array $init
+     */
+    public function create($where=[],$set=[],$init=[]) {
+        $this->langCounter=max(@count($where),@count($set),@count($init))-1;
+        $this->where=$where;
+        $this->set=$set;
+        $this->init=$init;
+    }
+    
     /**
      * It sends an expression to the MiniLang and it is decomposed in its parts. The script is not executed but parsed.
      *
