@@ -153,8 +153,9 @@ A variable could host a PHP object, and it is possible to call and to access the
 `varname.field`
 
 * If the field exists, then it uses it.
-* If the field doesn't exist, then it uses a method of the caller.
-* If the method of the caller doesn't exist then it tries to use the method of the service class 
+* If the field doesn't exist, then it uses a method of the object CALLER.
+* If the method of the CALLER doesn't exist then it tries to use the method of the service class 
+* If the method of the service class doesn't exist then it tries to use the inner method of the class MiniLang (with a prefix _). Example function _param()
 * Finally, if everything fails then it triggers an error.
 
 Example of code [examples/examplevariable2.php](examples/examplevariable2.php)
@@ -205,6 +206,8 @@ A variable could hold an associative/index array, and it is possible to read and
 ```php
 vararray.associndex // vararray['associindex']
 vararray.4 // vararray[4]
+vararray.param('a.b.c') // vararray['a']['b']['c']
+param(vararray,'a.b.c') // vararray['a']['b']['c']
 ```
 
 * If the element exists, then it uses it.
@@ -255,6 +258,13 @@ A global variable is defined by
 
 `$globalname`
 
+```php
+$globalname.associndex // $globalname['associindex']
+$globalname.4 // $globalname[4]
+$globalname.param('a.b.c') // $globalname['a']['b']['c']
+param($globalname,'a.b.c') // $globalname['a']['b']['c']
+```
+
 For example:
 
 `$globalname=30`
@@ -293,6 +303,7 @@ var_dump($field1); // returns 3
 | false()         | false value                                                                  |
 | true()          | true value                                                                   |
 | on()            | 1                                                                            |
+| param(var,'l1.l2.l3')            | Separates an array (var) into var['l1']['l2']['l3']         |
 | off()           | 0                                                                            |
 | undef()         | -1 (for undefined)                                                           |
 | flip()          | (special value). It inverts a value ON<->OFF<br>Used as value=flip()                                 |
@@ -456,6 +467,7 @@ This optional part of the expression allows setting the value of a variable.  It
 
 ## Version
 
+* 2.11 2019-10-11 method _param (class).  Also, $a.fn() is allowed.
 * 2.10 2019-10-07 method create()
 * 2.9 2019-08-28
 * * set field.value=20 , where field is an array works.  However field.1=20 does not work (the parser considers .1 as a decimal)

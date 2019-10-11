@@ -8,7 +8,7 @@ namespace eftec\minilang;
  *
  * @package  eftec\minilang
  * @author   Jorge Patricio Castro Castillo <jcastro arroba eftec dot cl>
- * @version  2.10 2019-10-07
+ * @version  2.11 2019-10-11
  * @link     https://github.com/EFTEC/MiniLang
  * @license  LGPL v3 (or commercial if it's licensed)
  */
@@ -131,6 +131,28 @@ class MiniLang
         $this->set=$set;
         $this->init=$init;
     }
+
+    /**
+     * This function decomposed an array or object into their subelements.<br>
+     * Example: $a['a']['b']['c']=123;   _param($a,'a.b.c')=123<br>
+     * It is designed to be called inside minilang. Example set $a1=param($a,'a.b.c')
+     * 
+     * @param array|object $a1
+     * @param string $a2 indexes separated by dot.
+     *
+     * @return array|mixed
+     */
+    public function _Param($a1,$a2) {
+        $arr=explode('.',$a2);
+        if (is_object($a1)) $a1=(array)$a1;
+        if (count($arr)<2) return $a1[$a2]; // _Param($a1,'a')
+        if (!is_array($a1)) return $a1;
+        $v=$a1;
+        foreach($arr as $k) {
+            $v=$v[$k];
+        }
+        return $v;
+    }
     
     /**
      * It sends an expression to the MiniLang and it is decomposed in its parts. The script is not executed but parsed.
@@ -179,10 +201,22 @@ class MiniLang
                             }
                         }
                         if (is_string($rTokenNext) && $rTokenNext == '.') {
-                            // $var.vvv
-                            $this->addBinOper($first, $position, $inFunction, 'subvar'
-                                , substr($v[1], 1), $rToken[$i + 2][1]);
-                            $i += 2;
+                            if (@$rToken[$i + 3] != '(') {
+                                // $var.vvv
+                                $this->addBinOper($first, $position, $inFunction, 'subvar'
+                                    , substr($v[1], 1), $rToken[$i + 2][1]);
+                                $i += 2;
+                            } else {
+                                // $field.vvv(arg,arg) = vvv($field,arg,arg)
+
+                                $this->addBinOper($first, $position, $inFunction, 'fn'
+                                    , $rToken[$i + 2][1], null);
+                                $inFunction = true;
+                                  //  $this->addParam($position, 'field', $v[1]);
+                                //$this->addParam($position, 'var', $v[1]);
+                                $this->addParam($position, 'var', substr($v[1], 1));
+                                $i += 3;
+                            }
                         } else {
                             // $var
                             $this->addBinOper($first, $position, $inFunction, 'var', substr($v[1], 1), null);
@@ -625,11 +659,15 @@ class MiniLang
         if (method_exists($this->serviceClass, $nameFunction)) {
             return call_user_func_array(array($this->serviceClass, $nameFunction), $args);
         } else {
-            if (function_exists($nameFunction)) {
-                return call_user_func($nameFunction,$args);
+            if (method_exists($this, '_'.$nameFunction)) {
+                return call_user_func_array(array($this, '_'.$nameFunction), $args);  
+            } else {
+                if (function_exists($nameFunction)) {
+                    return call_user_func($nameFunction, $args);
+                }
+                trigger_error("function [$nameFunction] is not defined");
+                return false;
             }
-            trigger_error("function [$nameFunction] is not defined");
-            return false;
         }
     }
 

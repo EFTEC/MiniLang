@@ -224,7 +224,13 @@ class CompilationTest extends AbstractMiniLang
     {
         global $countries;
         global $arrays;
+        global $megaarray;
         $caller = new DummyClass();
+        $megaarray=[
+            'first'=>
+                ['second'=>
+                    ['third'=>'abc']]
+        ];
         $countries = ['first','us' => 'usa', 'ca' => 'canada'];
         $arrays = [100, 200, 300, 400];
         $caller->values = [
@@ -233,6 +239,7 @@ class CompilationTest extends AbstractMiniLang
             'field3' => 12345,
             'field4' => 12345,
             'field5' => 12345,
+            'field6' => 12345,
             'countries' => $countries,
             'arrays' => $arrays
         ];
@@ -242,6 +249,8 @@ class CompilationTest extends AbstractMiniLang
         $this->mini->separate("when field1=1 then field3=arrays.1");
         $this->mini->separate('when field1=1 then field4=$countries.us');
         $this->mini->separate('when field1=1 then field5=$arrays.1');
+        $this->mini->separate('when field1=1 then field6=param($megaarray,"first.second.third")');
+        $this->mini->separate('when field1=1 then field6b=$megaarray.param("first.second.third")');
         //$this->mini->separate('when field1=1 then countries.0="mexico"');
         $this->mini->separate('when field1=1 then countries.us="mexico"'); // us now is mexico
         $this->mini->separate('when countries.us="mexico" then countries.ca="mexico"'); // if us is mexico then ca is mexico too
@@ -252,6 +261,8 @@ class CompilationTest extends AbstractMiniLang
         self::assertEquals(200, $caller->values['field3']); 
         self::assertEquals('usa', $caller->values['field4']);
         self::assertEquals(200, $caller->values['field5']);
+        self::assertEquals('abc', $caller->values['field6']);
+        self::assertEquals('abc', $caller->values['field6b']);
         //self::assertEquals('mexico', $caller->values['countries'][0]);
         self::assertEquals('mexico', $caller->values['countries']['us']);
         self::assertEquals('mexico', $caller->values['countries']['ca']);
