@@ -7,6 +7,12 @@ use eftec\minilang\MiniLang;
 class DummyClass
 {
     var $values = [];
+
+    public function testMethod()
+    {
+        echo "calling method from DummyClass\n";
+        return 1;
+    }
     public function dateLastChange() {
         return 123;
     }
@@ -14,15 +20,12 @@ class DummyClass
         return 123;
     }
 
-    public function testMethod()
-    {
-        echo "calling method";
-        return 1;
-    }
-
     public function ping($pong, $arg2 = '', $arg3 = '', $arg4 = '', $arg5 = '')
     {
         return $pong . $arg2 . $arg3 . $arg4 . $arg5;
+    }
+    public function invert($value) {
+        return $value;
     }
 }
 
@@ -33,15 +36,15 @@ class CompilationTest extends AbstractMiniLang
      */
     public function test1()
     {
-        $this->mini->separate("when field1=1 then field2=2 and field3=1+2 and field4='a' & 'b'");
+        $this->mini->separate2("when field1=1 then field2=2 and field3=1+2 and field4='a' & 'b'");
 
         $caller = new DummyClass();
         $caller->values = ['field1' => 1, 'field2' => 0, 'field3' => 0, 'field4' => 0, 'field5' => 0];
         $this->mini->setCaller($caller);
         $this->mini->setDict($caller->values);
 
-        if ($this->mini->evalLogic()) {
-            $this->mini->evalSet();
+        if ($this->mini->evalLogic2()) {
+            $this->mini->evalSet2();
         }
 
         self::assertEquals(2, $caller->values['field2'], 'field2 must be 2'); // default value
@@ -54,7 +57,7 @@ class CompilationTest extends AbstractMiniLang
      */
     public function testElse()
     {
-        $this->mini->separate("when field1=1 
+        $this->mini->separate2("when field1=1 
         then field2=2 
         else field2=100 and field3=field1");
         $caller = new DummyClass();
@@ -62,10 +65,10 @@ class CompilationTest extends AbstractMiniLang
         $this->mini->setCaller($caller);
         $this->mini->setDict($caller->values);
 
-        if ($this->mini->evalLogic()) {
-            $this->mini->evalSet();
+        if ($this->mini->evalLogic2()) {
+            $this->mini->evalSet2();
         } else {
-            $this->mini->evalSet(0,'else');
+            $this->mini->evalSet2(0,'else');
         }
 
         self::assertEquals(100, $caller->values['field2']); // default value
@@ -81,15 +84,15 @@ class CompilationTest extends AbstractMiniLang
         global $mivar, $mivar2;
         $mivar = "it is a test";
         $mivar2 = '';
-        $this->mini->separate('when field1=1 then field5=$mivar and $mivar2="test"');
+        $this->mini->separate2('when field1=1 then field5=$mivar and $mivar2="test"');
 
         $caller = new DummyClass();
         $caller->values = ['field1' => 1, 'field2' => 0, 'field3' => 0, 'field4' => 0, 'field5' => 0];
         $this->mini->setCaller($caller);
         $this->mini->setDict($caller->values);
 
-        if ($this->mini->evalLogic()) {
-            $this->mini->evalSet();
+        if ($this->mini->evalLogic2()) {
+            $this->mini->evalSet2();
         }
         self::assertEquals('it is a test', $caller->values['field5'], 'field5 must be it is a test'); // global
         self::assertEquals('test', $mivar2, '$mivar2 must be it is a test'); // global
@@ -100,14 +103,14 @@ class CompilationTest extends AbstractMiniLang
      */
     public function testServiceClass()
     {
-        $this->mini->separate("when testmethod()=1 then field2=testmethod()");
+        $this->mini->separate2("when testmethod()=1 then field2=testmethod()");
         $caller = new DummyClass();
         $caller->values = ['field1' => 1, 'field2' => 0, 'field3' => 0, 'field4' => 0];
         $this->mini->setCaller($caller);
         $this->mini->setDict($caller->values);
 
-        if ($this->mini->evalLogic()) {
-            $this->mini->evalSet();
+        if ($this->mini->evalLogic2()) {
+            $this->mini->evalSet2();
         }
         self::assertEquals(1, $caller->values['field2'], 'field2 must be 1'); // default value
 
@@ -117,13 +120,13 @@ class CompilationTest extends AbstractMiniLang
      */
     public function testMethod()
     {
-        $this->mini->separate("when obj.testmethod(1)=obj.testmethod() then field2=123");
+        $this->mini->separate2("when obj.testmethod(1)=obj.testmethod() then field2=123");
         
         $values= ['obj' => new DummyClass(), 'field2' => 0, 'field3' => 0, 'field4' => 0];
         $this->mini->setDict($values);
 
-        if ($this->mini->evalLogic()) {
-            $this->mini->evalSet();
+        if ($this->mini->evalLogic2()) {
+            $this->mini->evalSet2();
         }
         self::assertEquals(123, $this->mini->getDictEntry('field2'), 'field2 must be 123'); // default value
         self::assertEquals(123, $values['field2'], 'field2 must be 123'); // default value
@@ -134,14 +137,14 @@ class CompilationTest extends AbstractMiniLang
      */
     public function testFn2()
     {
-        $this->mini->separate("when 1=1 then field3=ping('pong')");
+        $this->mini->separate2("when 1=1 then field3=ping('pong')");
         $caller = new DummyClass();
         $caller->values = ['field1' => 1, 'field2' => 0, 'field3' => 0, 'field4' => 0];
         $this->mini->setCaller($caller);
         $this->mini->setDict($caller->values);
 
-        if ($this->mini->evalLogic()) {
-            $this->mini->evalSet();
+        if ($this->mini->evalLogic2()) {
+            $this->mini->evalSet2();
         }
         self::assertEquals('pong', $caller->values['field3'], 'field3 must be pong'); // default value
     }
@@ -153,14 +156,14 @@ class CompilationTest extends AbstractMiniLang
     {
         global $globalfield;
         $globalfield['field'] = "pong";
-        $this->mini->separate("when 1=1 then field3=field2.ping and field4=\$globalfield.field");
+        $this->mini->separate2("when 1=1 then field3=field2.ping() and field4=\$globalfield.field");
         $caller = new DummyClass();
         $caller->values = ['field1' => 1, 'field2' => "pong"];
         $this->mini->setCaller($caller);
         $this->mini->setDict($caller->values);
 
-        if ($this->mini->evalLogic()) {
-            $this->mini->evalSet();
+        if ($this->mini->evalLogic2()) {
+            $this->mini->evalSet2();
         }
         self::assertEquals('pong', $caller->values['field3'], 'field3 must be pong'); // default value
         self::assertEquals('pong', $caller->values['field4'], 'field4 must be pong'); // default value
@@ -173,7 +176,7 @@ class CompilationTest extends AbstractMiniLang
     {
         global $globalfield;
         $globalfield['field'] = "pong";
-        $this->mini->separate("when 1=1 then 
+        $this->mini->separate2("when 1=1 then 
         field1=null()
         and field2=false()
         and field3=true()
@@ -192,8 +195,8 @@ class CompilationTest extends AbstractMiniLang
         $this->mini->setCaller($caller);
         $this->mini->setDict($caller->values);
 
-        if ($this->mini->evalLogic()) {
-            $this->mini->evalSet();
+        if ($this->mini->evalLogic2()) {
+            $this->mini->evalSet2();
         }
         self::assertEquals(null, $caller->values['field1'], 'field1');
         self::assertEquals(false, $caller->values['field2'], 'field1');
@@ -202,7 +205,7 @@ class CompilationTest extends AbstractMiniLang
         self::assertEquals(0, $caller->values['field5'], 'field1');
         self::assertEquals(2, $caller->values['field6'], 'field1'); // ???
         self::assertEquals(-1, $caller->values['field7'], 'field1');
-        self::assertEquals(0, $caller->values['field8'], 'the value must flip from 123->0');
+        self::assertEquals(0, $caller->values['field8'], 'field1');
         self::assertGreaterThan(1571701816, $caller->values['field9'], 'field1');
         self::assertGreaterThan(1571701839, $caller->values['field10'], 'field1');
         self::assertGreaterThan(1571701839, $caller->values['field11'], 'field1');
@@ -216,14 +219,14 @@ class CompilationTest extends AbstractMiniLang
      */
     public function testFn4()
     {
-        $this->mini->separate("when 1=1 then field3=field2.ping(1,2,3,4) and field4=ping('a','b','c') and field5.invert()");
+        $this->mini->separate2("when 1=1 then field3=field2.ping(1,2,3,4) and field4=ping('a','b','c') and field5.invert()");
         $caller = new DummyClass();
         $caller->values = ['field1' => 1, 'field2' => "pong", 'field5' => 'on'];
         $this->mini->setCaller($caller);
         $this->mini->setDict($caller->values);
 
-        if ($this->mini->evalLogic()) {
-            $this->mini->evalSet();
+        if ($this->mini->evalLogic2()) {
+            $this->mini->evalSet2();
         }
         self::assertEquals('pong1234', $caller->values['field3'], 'field3 must be pong1234'); // default value
         self::assertEquals('abc', $caller->values['field4'], 'field4 must be abc'); // default value
@@ -234,7 +237,7 @@ class CompilationTest extends AbstractMiniLang
      */
     public function test2()
     {
-        $this->mini->separate("when field1=1 then field2=2");
+        $this->mini->separate2("when field1=1 then field2=2");
 
         $caller = new DummyClass();
         $caller->values = ['field1' => 0, 'field2' => 12345, 'field3' => 0, 'field4' => 0];
@@ -242,8 +245,8 @@ class CompilationTest extends AbstractMiniLang
         $this->mini->setCaller($caller);
         $this->mini->setDict($caller->values);
 
-        if ($this->mini->evalLogic()) {
-            $this->mini->evalSet();
+        if ($this->mini->evalLogic2()) {
+            $this->mini->evalSet2();
         }
 
         self::assertEquals(12345, $caller->values['field2']); // default value
@@ -256,13 +259,13 @@ class CompilationTest extends AbstractMiniLang
         $caller->values = ['field1' => 1, 'field2' => 12345, 'field3' => 3, 'field4' => 4];
 
         $this->mini = new MiniLang($caller, $caller->values);
-        $this->mini->separate("when field1=1 then field4='it is a value {{field1}},{{field2}}' ");
+        $this->mini->separate2("when field1=1 then field4='it is a value {{field1}},{{field2}}' ");
         $this->mini->setCaller($caller);
         $this->mini->setDict($caller->values);
 
-        if ($this->mini->evalLogic()) {
+        if ($this->mini->evalLogic2()) {
 
-            $this->mini->evalSet();
+            $this->mini->evalSet2();
         }
         self::assertEquals(1, $caller->values['field1']);
         self::assertEquals(12345, $caller->values['field2']); // default value
@@ -296,18 +299,18 @@ class CompilationTest extends AbstractMiniLang
         ];
 
         $this->mini = new MiniLang($caller, $caller->values);
-        $this->mini->separate("when field1=1 then field2=countries.us");
-        $this->mini->separate("when field1=1 then field3=arrays.1");
-        $this->mini->separate('when field1=1 then field4=$countries.us');
-        $this->mini->separate('when field1=1 then field5=$arrays.1');
-        $this->mini->separate('when field1=1 then field6=param($megaarray,"first.second.third")');
-        $this->mini->separate('when field1=1 then field6b=$megaarray.param("first.second.third")');
-        //$this->mini->separate('when field1=1 then countries.0="mexico"');
-        $this->mini->separate('when field1=1 then countries.us="mexico"'); // us now is mexico
-        $this->mini->separate('when countries.us="mexico" then countries.ca="mexico"'); // if us is mexico then ca is mexico too
+        $this->mini->separate2("when field1=1 then field2=countries.us");
+        $this->mini->separate2("when field1=1 then field3=arrays.1");
+        $this->mini->separate2('when field1=1 then field4=$countries.us');
+        $this->mini->separate2('when field1=1 then field5=$arrays.1');
+        $this->mini->separate2('when field1=1 then field6=param($megaarray,"first.second.third")');
+        $this->mini->separate2('when field1=1 then field6b=$megaarray.param("first.second.third")');
+        //$this->mini->separate2('when field1=1 then countries.0="mexico"');
+        $this->mini->separate2('when field1=1 then countries.us="mexico"'); // us now is mexico
+        $this->mini->separate2('when countries.us="mexico" then countries.ca="mexico"'); // if us is mexico then ca is mexico too
         $this->mini->setCaller($caller);
         $this->mini->setDict($caller->values);
-        $this->mini->evalAllLogic(false);
+        $this->mini->evalAllLogic2(false);
         self::assertEquals('usa', $caller->values['field2']);
         self::assertEquals(200, $caller->values['field3']); 
         self::assertEquals('usa', $caller->values['field4']);

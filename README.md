@@ -455,6 +455,39 @@ This optional part of the expression allows setting the value of a variable.  It
 
 > else variable1=20 and $variable2=variable3 and function(20)=40
 
+### Benchmark
+
+[examples/examplebenchmark.php](examples/examplebenchmark.php)
+
+We call the some operations 1000 times.
+
+#### (reset+separate+evalAllLogic) x 1000
+
+* We call the method reset(), separate() and evalAllLogic 1000 times.
+* Speed: 0.028973 seconds. Comparison: 46.6% (smaller is better)
+
+#### evalAllLogic x 1000
+
+* We call the method reset() and separate() 1 time
+* And we call the method evalAllLogic() 1000 times.
+* Speed: 0.002387 seconds. Comparison: 3.84% (smaller is better)
+
+#### (reset+separate2+evalAllLogic2) x 1000
+
+* We call the method reset(), separate2() and evalAllLogic2() 1000 times.
+* Speed: 0.06217 seconds. Comparison: 100% (smaller is better). It is the slower.
+
+#### (evalAllLogic2) x 1000
+
+* We call the method reset() and separate2() 1 time
+* And we call the method evalAllLogic2() 1000 times.
+* Speed: 0.013418 seconds. Comparison: 21.58% (smaller is better)
+
+#### PHP method of class x 1000
+
+* We create a class with the method $mini->generateClass2(); 1 time
+* Then, we call the class (as simple php code) 1000 times.
+* Speed: 0.000763 seconds. Comparison: 1.23% (smaller is better) it is the fastest.
 
 ## Documentation
 
@@ -467,6 +500,13 @@ This optional part of the expression allows setting the value of a variable.  It
 
 ## Version
 
+* 2.12 2019-10-21 
+  * New method separate2() and evalAllLogic2() it works with PHP's eval.
+  * New method generateClass2()
+  * separate2() and evalAllLogic2() works by parsing the tokens and converting in native PHP code.
+  * However it is from x2 to x5 slower than evalAllLogic().
+  * This new motor could work by caching the evaluation in fields $setTxt,$whereTxt,$elseTxt,$initTxt
+  * See benchmark 
 * 2.11 2019-10-11 method _param (class).  Also, $a.fn() is allowed.
 * 2.10 2019-10-07 method create()
 * 2.9 2019-08-28
