@@ -500,6 +500,8 @@ We call the some operations 1000 times.
 
 ## Version
 
+* 2.14 2019-10-26
+  * Fixed the method callFunction() when the first argument of the function is an object but the method is defined in the caller or service class
 * 2.12 2019-10-21 
   * New method separate2() and evalAllLogic2() it works with PHP's eval.
   * New method generateClass2()

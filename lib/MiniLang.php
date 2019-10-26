@@ -8,7 +8,7 @@ namespace eftec\minilang;
  *
  * @package  eftec\minilang
  * @author   Jorge Patricio Castro Castillo <jcastro arroba eftec dot cl>
- * @version  2.12 2019-10-20
+ * @version  2.14 2019-10-26
  * @link     https://github.com/EFTEC/MiniLang
  * @license  LGPL v3 (or commercial if it's licensed)
  */
@@ -80,7 +80,7 @@ class MiniLang {
 
     /**
      * It sets the object caller.
-     * 
+     *
      * @param object $caller
      */
     public function setCaller($caller) {
@@ -754,9 +754,15 @@ class MiniLang {
                     // someobject.field (nameFunction acts as a field name)
                     return $args[0]->{$nameFunction};
                 } else {
-                    $cp = $args;
-                    unset($cp[0]); // it avoids to pass the name of the function as argument
-                    return $args[0]->{$nameFunction}(...$cp); //(...$cp);
+                    // the first argument is an object
+                    if(method_exists($args[0], $nameFunction)) {
+                        $cp = $args;
+                        unset($cp[0]); // it avoids to pass the name of the function as argument
+                        return $args[0]->{$nameFunction}(...$cp); //(...$cp);
+                    } else {
+                        // but the function is not defined.
+                        return $this->callFunctionCallerService($nameFunction,$args);
+                    }
                 }
             }
             if (is_array($args[0])) {
@@ -767,6 +773,9 @@ class MiniLang {
                 }
             }
         }
+        return $this->callFunctionCallerService($nameFunction,$args);
+    }
+    private function callFunctionCallerService($nameFunction,$args) {
         if (is_object($this->caller)) {
             if (method_exists($this->caller, $nameFunction)) {
                 return call_user_func_array(array($this->caller, $nameFunction), $args);
