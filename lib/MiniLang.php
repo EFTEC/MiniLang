@@ -8,7 +8,7 @@ namespace eftec\minilang;
  *
  * @package  eftec\minilang
  * @author   Jorge Patricio Castro Castillo <jcastro arroba eftec dot cl>
- * @version  2.14 2019-10-26
+ * @version  2.15 2020-01-12
  * @link     https://github.com/EFTEC/MiniLang
  * @license  LGPL v3 (or commercial if it's licensed)
  */
@@ -797,7 +797,7 @@ class MiniLang {
                 return call_user_func_array(array($this, '_' . $nameFunction), $args);
             } else {
                 if (function_exists($nameFunction)) {
-                    return call_user_func($nameFunction, $args);
+                    return call_user_func_array($nameFunction, $args);
                 }
                 switch ($nameFunction) {
                     case 'null':
