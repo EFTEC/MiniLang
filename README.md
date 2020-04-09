@@ -528,4 +528,3 @@ We call the some operations 1000 times.
 * 2.0 2019-05-20 Second version. It uses PHP to parse the file.   
 * 1.15 2019-01-06 If we add (+) two values and they are numeric then we add. Otherwise, it concatenates.  
 * 1.14 2018-12-26 First open-source version.   
-
