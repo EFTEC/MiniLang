@@ -1,4 +1,7 @@
-<?php
+<?php /** @noinspection MultiAssignmentUsageInspection */
+/** @noinspection PhpRedundantVariableDocTypeInspection */
+
+/** @noinspection TypeUnsafeComparisonInspection */
 
 namespace eftec\minilang;
 
@@ -8,33 +11,33 @@ namespace eftec\minilang;
  *
  * @package  eftec\minilang
  * @author   Jorge Patricio Castro Castillo <jcastro arroba eftec dot cl>
- * @version  2.15 2020-01-12
+ * @version  2.16 2020-09-22
  * @link     https://github.com/EFTEC/MiniLang
  * @license  LGPL v3 (or commercial if it's licensed)
  */
 class MiniLang {
     /** @var array When operators (if any) */
-    var $where = [];
+    public $where = [];
     /** @var array Set operators (if any) */
-    var $set = [];
+    public $set = [];
     /** @var array Set operators (if any)  */
-    var $else = [];
+    public $else = [];
     /** @var array Init operators (if any)  */
-    var $init = [];
+    public $init = [];
     /** @var string[] */
-    var $whereTxt = [];
+    public $whereTxt = [];
     /** @var string[] */
-    var $setTxt = [];
+    public $setTxt = [];
     /** @var string[] */
-    var $elseTxt = [];
+    public $elseTxt = [];
     /** @var string[] */
-    var $initTxt = [];
+    public $initTxt = [];
 
-    private $specialCom = [];
-    private $areaName = [];
+    private $specialCom;
+    private $areaName;
     /** @var array values per the special area */
-    var $areaValue = [];
-    var $serviceClass = null;
+    public $areaValue = [];
+    public $serviceClass;
     /** @var object for callbacks */
     private $caller;
 
@@ -188,15 +191,13 @@ class MiniLang {
                         }
                         break;
                     case T_VARIABLE:
-                        if (is_array($rTokenNext)) {
-                            // fix for $aaa.2 
-                            if ($rTokenNext[0] == T_DNUMBER && substr($rTokenNext[1], 0, 1) == '.') {
-                                $rToken[$i + 2] = [T_STRING, substr($rTokenNext[1], 1)];
-                                $rTokenNext = '.';
-                            }
+                        // fix for $aaa.2 
+                        if (is_array($rTokenNext) && $rTokenNext[0] == T_DNUMBER && $rTokenNext[1][0] === '.') {
+                            $rToken[$i + 2] = [T_STRING, substr($rTokenNext[1], 1)];
+                            $rTokenNext = '.';
                         }
-                        if (is_string($rTokenNext) && $rTokenNext == '.') {
-                            if (@$rToken[$i + 3] != '(') {
+                        if (is_string($rTokenNext) && $rTokenNext === '.') {
+                            if (@$rToken[$i + 3] !== '(') {
                                 // $var.vvv
                                 $this->addBinOper($first, $position, $inFunction, 'subvar'
                                     , substr($v[1], 1), $rToken[$i + 2][1]);
@@ -228,7 +229,7 @@ class MiniLang {
                         $first = true;
                         break;
                     case T_STRING:
-                        if (in_array($v[1], $this->areaName)) {
+                        if (in_array($v[1], $this->areaName, true)) {
                             // its an area. <area> <somvalue>
                             if (count($rToken) > $i + 2) {
                                 $tk = $rToken[$i + 2];
@@ -272,16 +273,16 @@ class MiniLang {
                                     $first = true;
                                     break;
                                 default:
-                                    if (is_array($rTokenNext)) {
-                                        // fix for $aaa.2 
-                                        if ($rTokenNext[0] == T_DNUMBER && substr($rTokenNext[1], 0, 1) == '.') {
-                                            $rToken[$i + 2] = [T_STRING, substr($rTokenNext[1], 1)];
-                                            $rTokenNext = '.';
-                                        }
+                                    // fix for $aaa.2 
+                                    if (is_array($rTokenNext) && $rTokenNext[0] == T_DNUMBER
+                                        && $rTokenNext[1][0] === '.'
+                                    ) {
+                                        $rToken[$i + 2] = [T_STRING, substr($rTokenNext[1], 1)];
+                                        $rTokenNext = '.';
                                     }
                                     if (is_string($rTokenNext)) {
-                                        if ($rTokenNext == '.') {
-                                            if (@$rToken[$i + 3] != '(') {
+                                        if ($rTokenNext === '.') {
+                                            if (@$rToken[$i + 3] !== '(') {
                                                 // field.vvv
                                                 $this->addBinOper($first, $position, $inFunction, 'subfield', $v[1],
                                                     $rToken[$i + 2][1]);
@@ -295,9 +296,9 @@ class MiniLang {
                                                 $this->addParam($position, 'field', $v[1]);
                                                 $i += 3;
                                             }
-                                        } elseif ($rTokenNext == '(') {
+                                        } elseif ($rTokenNext === '(') {
                                             // function()
-                                            if ($v[1] == 'flip') {
+                                            if ($v[1] === 'flip') {
                                                 // $pr is pair(0),field(1),field8(2),null(3),=(4)
                                                 $pr = end($this->{$position}[$this->langCounter]);
                                                 $this->addBinOper($first, $position, $inFunction, 'fn', $v[1]);
@@ -308,26 +309,19 @@ class MiniLang {
                                             }
 
                                             $inFunction = true;
-                                            $i += 1;
-                                        } else {
-                                            // field
-                                            if (in_array($v[1], $this->specialCom)) {
-                                                $this->addBinOper($first, $position, $inFunction, 'special', $v[1],
-                                                    null);
-                                                $first = true;
-                                            } else {
-                                                $this->addBinOper($first, $position, $inFunction, 'field', $v[1], null);
-                                            }
-
-                                        }
-                                    } else {
-                                        // field
-                                        if (in_array($v[1], $this->specialCom)) {
-                                            $this->addBinOper($first, $position, $inFunction, 'special', $v[1], null);
+                                            ++$i;
+                                        } elseif (in_array($v[1], $this->specialCom)) {
+                                            $this->addBinOper($first, $position, $inFunction, 'special', $v[1],
+                                                null);
                                             $first = true;
                                         } else {
                                             $this->addBinOper($first, $position, $inFunction, 'field', $v[1], null);
                                         }
+                                    } elseif (in_array($v[1], $this->specialCom)) {
+                                        $this->addBinOper($first, $position, $inFunction, 'special', $v[1], null);
+                                        $first = true;
+                                    } else {
+                                        $this->addBinOper($first, $position, $inFunction, 'field', $v[1], null);
                                     }
                                     break;
                             }
@@ -347,7 +341,7 @@ class MiniLang {
                         break;
                     case T_LOGICAL_AND:
                     case T_BOOLEAN_AND:
-                        if ($position != 'where') {
+                        if ($position !== 'where') {
                             $first = true;
                         } else {
                             $this->addLogic($position, $first, 'and');
@@ -378,7 +372,7 @@ class MiniLang {
                         break;
                     case ',':
                         if (!$inFunction) {
-                            if ($position != 'where') {
+                            if ($position !== 'where') {
                                 $first = true;
                             } else {
                                 $this->addLogic($position, $first, ',');
@@ -454,6 +448,7 @@ class MiniLang {
      * @param int  $tabs        Number of tabs (for the identation)
      *
      * @return string a php code.
+     * @noinspection PhpUnusedParameterInspection
      */
     public function getCode2($line = 0, $stopOnFound = false, $start = false, $tabs = 0) {
         $code = '';
@@ -537,13 +532,13 @@ class MiniLang {
         } // no where = true
         foreach ($this->where[$numLine] as $k => $v) {
             if ($v[0] === 'pair') {
-                if ($v[1] == 'special') {
+                if ($v[1] === 'special') {
 
                     if (count($v) >= 7) {
                         return $this->caller->{$v[2]}($v[6]);
-                    } else {
-                        return $this->caller->{$v[2]}();
                     }
+
+                    return $this->caller->{$v[2]}();
                 }
 
                 $field0 = $this->getValue($v[1], $v[2], $v[3]);
@@ -644,11 +639,13 @@ class MiniLang {
                 } else {
                     $field1 = null;
                 }
-                for ($i = 8; $i < count($v); $i += 4) {
+                $countv=count($v);
+                for ($i = 8; $i < $countv; $i += 4) {
                     switch ($v[$i]) {
                         case '+': // if we add numbers then it adds, otherwise it concatenates.
                             $field2 = $this->getValue($v[$i + 1], $v[$i + 2], $v[$i + 3]);
                             if (is_numeric($field1) && is_numeric($field2)) {
+                                /** @noinspection AdditionOperationOnArraysInspection */
                                 $field1 += $this->getValue($v[$i + 1], $v[$i + 2], $v[$i + 3]);
                             } else {
                                 $field1 .= $this->getValue($v[$i + 1], $v[$i + 2], $v[$i + 3]);
@@ -689,6 +686,7 @@ class MiniLang {
                                 $GLOBALS[$name] = $field1;
                                 break;
                             case '+';
+                                /** @noinspection AdditionOperationOnArraysInspection */
                                 $GLOBALS[$name] += $field1;
                                 break;
                             case '-';
@@ -707,6 +705,7 @@ class MiniLang {
                                 $this->dict[$name] = $field1;
                                 break;
                             case '+';
+                                /** @noinspection AdditionOperationOnArraysInspection */
                                 $this->dict[$name] += $field1;
                                 break;
                             case '-';
@@ -753,24 +752,22 @@ class MiniLang {
                 if (isset($args[0]->{$nameFunction})) {
                     // someobject.field (nameFunction acts as a field name)
                     return $args[0]->{$nameFunction};
-                } else {
-                    // the first argument is an object
-                    if(method_exists($args[0], $nameFunction)) {
-                        $cp = $args;
-                        unset($cp[0]); // it avoids to pass the name of the function as argument
-                        return $args[0]->{$nameFunction}(...$cp); //(...$cp);
-                    } else {
-                        // but the function is not defined.
-                        return $this->callFunctionCallerService($nameFunction,$args);
-                    }
                 }
+
+                // the first argument is an object
+                if(method_exists($args[0], $nameFunction)) {
+                    $cp = $args;
+                    unset($cp[0]); // it avoids to pass the name of the function as argument
+                    return $args[0]->{$nameFunction}(...$cp); //(...$cp);
+                }
+
+                // but the function is not defined.
+                return $this->callFunctionCallerService($nameFunction,$args);
             }
-            if (is_array($args[0])) {
-                // the call is the form nameFunction(somevar) or somevar.nameFunction()
-                if (isset($args[0][$nameFunction])) {
-                    // someobject.field (nameFunction acts as a field name)
-                    return $args[0][$nameFunction];
-                }
+            // the call is the form nameFunction(somevar) or somevar.nameFunction()
+            if (is_array($args[0]) && isset($args[0][$nameFunction])) {
+                // someobject.field (nameFunction acts as a field name)
+                return $args[0][$nameFunction];
             }
         }
         return $this->callFunctionCallerService($nameFunction,$args);
@@ -783,67 +780,64 @@ class MiniLang {
             if (isset($this->caller->{$nameFunction})) {
                 return $this->caller->{$nameFunction};
             }
-        } else {
-            if (is_array($this->caller)) {
-                if (isset($this->caller[$nameFunction])) {
-                    return $this->caller[$nameFunction];
-                }
+        } elseif (is_array($this->caller)) {
+            if (isset($this->caller[$nameFunction])) {
+                return $this->caller[$nameFunction];
             }
         }
         if (method_exists($this->serviceClass, $nameFunction)) {
             return call_user_func_array(array($this->serviceClass, $nameFunction), $args);
-        } else {
-            if (method_exists($this, '_' . $nameFunction)) {
-                return call_user_func_array(array($this, '_' . $nameFunction), $args);
-            } else {
-                if (function_exists($nameFunction)) {
-                    return call_user_func_array($nameFunction, $args);
-                }
-                switch ($nameFunction) {
-                    case 'null':
-                        return null;
-                    case 'true':
-                        return true;
-                    case 'false':
-                        return false;
-                    case 'on':
-                        return 1;
-                    case 'off':
-                        return 0;
-                    case 'undef':
-                        return -1;
-                    case 'flip':
-                        return (!@$args[0]) ? 1 : 0;
-                        break;
-                    case 'now':
-                    case 'timer':
-                        return time();
-                    case 'interval':
-                        if (isset($this->caller->dateLastChange)) {
-                            return time() - $this->caller->dateLastChange;
-                        }
-                        if (method_exists($this->caller, 'dateLastChange')) {
-                            return time() - $this->caller->dateLastChange();
-                        }
-                        trigger_error("caller doesn't define field or method dateLastChange");
-                        break;
-                    case 'fullinterval':
-                        if (isset($this->caller->dateInit)) {
-                            return time() - $this->caller->dateInit;
-                        }
-                        if (method_exists($this->caller, 'dateInit')) {
-                            return time() - $this->caller->dateInit();
-                        }
-                        trigger_error("caller doesn't define field or method dateInit");
-                        break;
-                    default:
-                        trigger_error("function [$nameFunction] is not defined");
-                        break;
-                }
-
-                return false;
-            }
         }
+
+        if (method_exists($this, '_' . $nameFunction)) {
+            return call_user_func_array(array($this, '_' . $nameFunction), $args);
+        }
+
+        if (function_exists($nameFunction)) {
+            return call_user_func_array($nameFunction, $args);
+        }
+        switch ($nameFunction) {
+            case 'null':
+                return null;
+            case 'true':
+                return true;
+            case 'false':
+                return false;
+            case 'on':
+                return 1;
+            case 'off':
+                return 0;
+            case 'undef':
+                return -1;
+            case 'flip':
+                return (!@$args[0]) ? 1 : 0;
+            case 'now':
+            case 'timer':
+                return time();
+            case 'interval':
+                if (isset($this->caller->dateLastChange)) {
+                    return time() - $this->caller->dateLastChange;
+                }
+                if (method_exists($this->caller, 'dateLastChange')) {
+                    return time() - $this->caller->dateLastChange();
+                }
+                trigger_error("caller doesn't define field or method dateLastChange");
+                break;
+            case 'fullinterval':
+                if (isset($this->caller->dateInit)) {
+                    return time() - $this->caller->dateInit;
+                }
+                if (method_exists($this->caller, 'dateInit')) {
+                    return time() - $this->caller->dateInit();
+                }
+                trigger_error("caller doesn't define field or method dateInit");
+                break;
+            default:
+                trigger_error("function [$nameFunction] is not defined");
+                break;
+        }
+
+        return false;
     }
 
     /**
@@ -873,13 +867,11 @@ class MiniLang {
                     return;
                 }
             }
-            if (is_array($args[0])) {
-                // the call is the form nameFunction(somevar)=1 or somevar.nameFunction()=1
-                if (isset($args[0][$nameFunction])) {
-                    // someobject.field (nameFunction acts as a field name
-                    $args[0][$nameFunction] = $setValue;
-                    return;
-                }
+            // the call is the form nameFunction(somevar)=1 or somevar.nameFunction()=1
+            if (is_array($args[0]) && isset($args[0][$nameFunction])) {
+                // someobject.field (nameFunction acts as a field name
+                $args[0][$nameFunction] = $setValue;
+                return;
             }
         }
         if (is_object($this->caller)) {
@@ -888,16 +880,16 @@ class MiniLang {
                 call_user_func_array(array($this->caller, $nameFunction), $args);
                 return;
 
-            } elseif (isset($this->caller->{$nameFunction})) {
+            }
+
+            if (isset($this->caller->{$nameFunction})) {
                 $this->caller->{$nameFunction} = $setValue;
                 return;
             }
-        } else {
-            if (is_array($this->caller)) {
-                if (isset($this->caller[$nameFunction])) {
-                    $this->caller[$nameFunction] = $setValue;
-                    return;
-                }
+        } elseif (is_array($this->caller)) {
+            if (isset($this->caller[$nameFunction])) {
+                $this->caller[$nameFunction] = $setValue;
+                return;
             }
         }
         if ($this->serviceClass !== null) {
@@ -922,7 +914,7 @@ class MiniLang {
             case 'subvar':
                 // $a.field
                 $rname = @$GLOBALS[$name];
-                if (substr($ext, 0, 1) === '$') {
+                if ($ext[0] === '$') {
                     // $a.$b
                     $ext = @$GLOBALS[substr($ext, 1)];
                 }
@@ -961,11 +953,8 @@ class MiniLang {
                     }
                 }
                 return $this->callFunction($name, $args);
-
-                break;
             case 'special':
                 return $name;
-                break;
             default:
                 trigger_error("value with type[$type] not defined");
                 return null;
@@ -982,14 +971,14 @@ class MiniLang {
      * @return string|string[]|null
      */
     public function getValueP($string) {
-        return preg_replace_callback('/{\{\s?(\w+)\s?\}\}/u', function ($matches) {
+        return preg_replace_callback('/{{\s?(\w+)\s?}}/u', function ($matches) {
             if (is_array($matches)) {
-                $item = substr($matches[0], 2, strlen($matches[0]) - 4); // removes {{ and }}
-                return @$this->dict[$item];
-            } else {
-                $item = substr($matches, 2, strlen($matches) - 4); // removes {{ and }}
+                $item = substr($matches[0], 2, -2); // removes {{ and }}
                 return @$this->dict[$item];
             }
+
+            $item = substr($matches, 2, -2); // removes {{ and }}
+            return @$this->dict[$item];
         }, $string);
     }
 
@@ -1019,7 +1008,7 @@ class MiniLang {
             $expr[$f][$f2] = $type;
             $expr[$f][$f2 + 1] = $name;
             $expr[$f][$f2 + 2] = $ext;
-            if ($position == 'where') {
+            if ($position === 'where') {
                 $first = true;
             }
         }
@@ -1068,7 +1057,7 @@ class MiniLang {
      * @param string $position =['where','set','else','init'][$i]
      * @param int    $numLine
      *
-     * @return array
+     * @return string
      */
     public function compileTokens($position, $numLine = 0) {
         $code = [];
@@ -1084,7 +1073,7 @@ class MiniLang {
                     if (count($item) <= 4) {
                         $this->compileTokenField($item, $p, $code);
                     } else {
-                        while (1 == 1) {
+                        while (true) {
                             $this->compileTokenField($item, $p, $code);
                             if (!isset($item[$p])) {
                                 break;
@@ -1092,7 +1081,7 @@ class MiniLang {
                             $this->compileTokenPairOp($position, $item, $p, $code);
                         }
                     }
-                    if ($position != 'where') {
+                    if ($position !== 'where') {
                         $code[] = ";\n";
                     }
                     break;
@@ -1127,7 +1116,7 @@ class MiniLang {
         $i1 = $arrayToken[$startPosition];
         switch ($i1) {
             case '=':
-                $r = ($position == 'where') ? '==' : '=';
+                $r = ($position === 'where') ? '==' : '=';
                 break;
             case '&':
                 $r = '.';
@@ -1230,7 +1219,7 @@ class MiniLang {
      * @param bool   $first    If it's true then it is the first value of a binary
      * @param string $name     name of the logic
      */
-    private function addLogic($position, &$first, $name) {
+    private function addLogic($position, $first, $name) {
         if ($first) {
             $position = (!$position) ? 'init' : $position;
             $this->{$position}[$this->langCounter][] = ['logic', $name];

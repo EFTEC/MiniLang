@@ -23,8 +23,6 @@ then fieldsum=123+456 and field3=321+789 and field4="xx" + "yy" and $field5=myfn
 $mini->separate("when field1=2 then field2=4");
 
 
-
-
 echo "<br>where:<br>";
 echo "<pre>";
 var_dump($mini->compileTokens('where'));
