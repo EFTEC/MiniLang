@@ -72,6 +72,25 @@ $mini->evalAllLogic($callback,$result);
 var_dump($result);
 ```
 
+Another example:
+
+```php
+use eftec\minilang\MiniLang;
+
+include "../lib/MiniLang.php";
+
+$result=['var1'=>'hello'];
+$global1="hello";
+$mini=new MiniLang(null,$result);
+$mini->throwError=false; // if error then we store the errors in $mini->errorLog;
+$mini->separate('when var1="hello" then var2="world" '); // if var1 is equals "hello" then var2 is set "world"
+$mini->separate('when $global1="hello" then $global2="world" '); // we can also use php variables (global)
+$mini->evalAllLogic(false); // false means it continues to evaluate more expressions if any 
+							// (true means that it only evaluates the first expression where "when" is valid)
+var_dump($result); //  array(2) { ["var1"]=> string(5) "hello" ["var2"]=> string(5) "world" }
+var_dump($global2); //  string(5) "world"
+```
+
 ## Methods
 
 ### Constructor
@@ -79,9 +98,9 @@ var_dump($result);
 > __construct(&$caller,&$dict,array $specialCom=[],$areaName=[],$serviceClass=null)
 
 * object $caller Indicates the object with the callbacks
-* array $dict Dictionary with initial values
-* array $specialCom Special commands. it calls a function of the caller.
-* array $areaName It marks special areas that could be called as "<namearea> somevalue."
+* array **$dict** Dictionary with initial values
+* array **$specialCom** Special commands. it calls a function of the caller.
+* array **$areaName** It marks special areas that could be called as "<namearea> somevalue."
 *null|object $serviceClass A service class. By default, it uses the $caller.
 
 ### reset()
@@ -90,7 +109,7 @@ It reset the previous definitions but the variables, service and areas.
 
 ### setCaller(&$caller)
 
-Set a caller object. 
+Set a caller object.     The caller object it could be a service class with method that they could be called inside the script.
 
 ### setDict(&$dict)
 
@@ -115,8 +134,33 @@ It evaluates a logic. It returns true or false.
 
 It sets a value or values. It does not consider if WHERE is true or not.
 
-* int    $idx number of expression
+* int  $idx number of expression
 * string $position =['set','init'][$i] It could be set or init
+
+## Fields
+
+### $throwError 
+
+Boolean. 
+
+* If true (default value), then the library throw an error when an error is found (for example if a method does not exist).
+* If false, then every error is captured in the array $errorLog
+
+
+
+### $errorLog
+
+Array of String. if $throwError is false then every error is stored here.
+
+Example:
+
+```php
+$this->throwError=false;
+$mini->separate("when FIELDDOESNOTEXIST=1 then field2=2");
+var_dump($this->errorLog);
+```
+
+
 
 ## Definition
 
@@ -203,11 +247,25 @@ var_dump($variables);
 
 A variable could hold an associative/index array, and it is possible to read and to access the elements inside it.
 
+Example:
+
 ```php
-vararray.associndex // vararray['associindex']
-vararray.4 // vararray[4]
-vararray.param('a.b.c') // vararray['a']['b']['c']
-param(vararray,'a.b.c') // vararray['a']['b']['c']
+$mini=new MiniLang(null,
+                   [
+                       'vararray'=>['associindex'=>'hi',0=>'a',1=>'b',2=>'c',3=>'d',4=>'last','a'=>['b'=>['c'=>'nested']]]
+                   ]
+                  );
+```
+
+```php
+vararray.associndex // vararray['associindex'] ('hi')
+vararray.4 // vararray[4] 'last'
+vararray.123 // it will throw an error.
+vararray.param('a.b.c') // vararray['a']['b']['c'] ('nested')
+param(vararray,'a.b.c') // vararray['a']['b']['c'] ('nested')
+vararray._first // first element ('hi')
+vararray._last // last element ('last')
+vararray._count // returns the number of elements. (6)
 ```
 
 * If the element exists, then it uses it.
@@ -237,8 +295,9 @@ $mini->separate("when field1.id>0 then
                 and processservice(field3)"); 
 
 $variables=['field1'=>['id'=>1,'value'=>3]
-       ,'field2'=>['id'=>2,'value'=>'']
-         ,'field3'=>['id'=>3,'value'=>'']]; 
+            ,'field2'=>['id'=>2,'value'=>'']
+            ,'field3'=>['id'=>3,'value'=>'']
+           ]; 
 $callback=new ClassCaller();
 $mini->evalAllLogic($callback,$variables,false);
 var_dump($variables);
@@ -265,13 +324,13 @@ $globalname.param('a.b.c') // $globalname['a']['b']['c']
 param($globalname,'a.b.c') // $globalname['a']['b']['c']
 ```
 
-For example:
+Example:
 
 `$globalname=30`
 
 Example Code: [examples/exampleglobal.php](examples/exampleglobal.php)
 ```php
-$field1=1; // global variable
+$field1=1; // our global variable
 $mini=new MiniLang();
 $mini->separate('when $field1>0 then $field1=3'); // we prepare the language
 $variables=[]; // local variables
@@ -289,7 +348,7 @@ var_dump($field1); // returns 3
 |stringp|"my name is {{var}}"|
 |function|namefunction(arg,arg)|
 
-### examples
+### Examples
 
 > set var=20 and var2="hello" and var3="hello {{var}}" and var4=fn()
 
@@ -407,7 +466,7 @@ It's possible to compare more than a condition at the same time by separating by
 
 This part of the expression allows setting the value of a variable.  It is possible to set more than one variable at the same time by separating by "," or "and."
 
-We can also use "then."
+We can also use the expression "set" or "then"
 
 > **set** expression    
 
@@ -415,9 +474,9 @@ or
 
 > **then** expression    
 
-> SET is only executed if WHERE is valid
+> This part of the expression is only executed if WHERE is valid
 
-It is also possible to set a function. However, the value could not be set (but the function is executed)
+
 
 ### Expressions allowed
 
@@ -500,14 +559,18 @@ We call the some operations 1000 times.
 
 ## Version
 
+* 2.17 2020-10-13
+    * Added new field **$throwError** and **$errorLog**.  Now the library throws an error (by default) if an error is found, instead of a trigger_error
+    * The logic **AND** is optimized, if the first expression is false, then the second expression is never evaluated.
+    * Added array.**\_first**, array.**\_last** and array.**\_count**
 * 2.16 2020-09-22
     * The code was refactored and optimized.       
 * 2.15 2020-01-12
     * fixed the evaluation of 'set variable=function(variable2)' where function is a php function
 * 2.14 2019-10-26
-  * Fixed the method callFunction() when the first argument of the function is an object but the method is defined in the caller or service class
+  * Fixed the method **callFunction()** when the first argument of the function is an object but the method is defined in the caller or service class
 * 2.12 2019-10-21 
-  * New method separate2() and evalAllLogic2() it works with PHP's eval.
+  * New method **separate2()** and evalAllLogic2() it works with PHP's eval.
   * New method generateClass2()
   * separate2() and evalAllLogic2() works by parsing the tokens and converting in native PHP code.
   * However it is from x2 to x5 slower than evalAllLogic().

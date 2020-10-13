@@ -1,9 +1,13 @@
-<?php /** @noinspection MultiAssignmentUsageInspection */
+<?php /** @noinspection NotOptimalIfConditionsInspection */
+/** @noinspection TypeUnsafeArraySearchInspection */
+/** @noinspection MultiAssignmentUsageInspection */
 /** @noinspection PhpRedundantVariableDocTypeInspection */
 
 /** @noinspection TypeUnsafeComparisonInspection */
 
 namespace eftec\minilang;
+
+use RuntimeException;
 
 /**
  * It's a mini language parser. It uses the build-in token_get_all function to performance purpose.
@@ -11,7 +15,7 @@ namespace eftec\minilang;
  *
  * @package  eftec\minilang
  * @author   Jorge Patricio Castro Castillo <jcastro arroba eftec dot cl>
- * @version  2.16 2020-09-22
+ * @version  2.17 2020-10-13
  * @link     https://github.com/EFTEC/MiniLang
  * @license  LGPL v3 (or commercial if it's licensed)
  */
@@ -40,6 +44,10 @@ class MiniLang {
     public $serviceClass;
     /** @var object for callbacks */
     private $caller;
+    
+    public $throwError=true;
+    public $errorLog=[];
+    private $debugLine=0;
 
     /** @var array */
     protected $dict;
@@ -56,7 +64,7 @@ class MiniLang {
      * @param array       $areaName   It marks special areas that could be called as "<namearea> somevalue"
      * @param null|object $serviceObject
      */
-    public function __construct($caller, &$dict, array $specialCom = [], $areaName = [], $serviceObject = null) {
+    public function __construct($caller=null, &$dict=[], $specialCom = [], $areaName = [], $serviceObject = null) {
         $this->specialCom = $specialCom;
         $this->areaName = $areaName;
         $this->serviceClass = $serviceObject;
@@ -78,6 +86,7 @@ class MiniLang {
         $this->setTxt = [];
         $this->elseTxt = [];
         $this->initTxt = [];
+        $this->errorLog=[];
 
     }
 
@@ -573,7 +582,8 @@ class MiniLang {
                         $r = (strpos($field0, $field1) !== false);
                         break;
                     default:
-                        trigger_error("comparison {$v[4]} not defined for eval logic.");
+                        $error="comparison {$v[4]} not defined for eval logic.";
+                        $this->throwError($error);
                 }
                 switch ($addType) {
                     case 'and':
@@ -588,6 +598,9 @@ class MiniLang {
                 $prev = $r;
             } else {
                 $addType = $v[1];
+                if($addType==='and' && !$r) {
+                    return false;
+                } 
             }
         } // for
         return $r;
@@ -603,6 +616,7 @@ class MiniLang {
      */
     public function evalAllLogic($stopOnFound = true, $start = false) {
         for ($i = 0; $i <= $this->langCounter; $i++) {
+            $this->debugLine=$i;
             if ($start) {
                 $this->evalSet($i, 'init');
             }
@@ -697,7 +711,8 @@ class MiniLang {
                     case 'number':
                     case 'string':
                     case 'stringp':
-                        trigger_error("Literal [{$v[2]}] of the type [{$v[1]}] is not for set.");
+                        $error="Literal [{$v[2]}] of the type [{$v[1]}] is not for set.";
+                        $this->throwError($error);                        
                         break;
                     case 'field':
                         switch ($op) {
@@ -730,11 +745,18 @@ class MiniLang {
                         $this->callFunctionSet($name, $args, $field1);
                         break;
                     default:
-                        trigger_error("set {$v[4]} not defined for transaction.");
+                        $error="set {$v[4]} not defined for transaction.";
+                        $this->throwError($error);
                         break;
                 }
             }
         } // for
+    }
+    private function throwError($msg) {
+        $this->errorLog[]=$msg.' Line:'.$this->debugLine;
+        if($this->throwError) {
+            throw new RuntimeException($msg.' Line:'.$this->debugLine);
+        }
     }
 
     /**
@@ -765,9 +787,20 @@ class MiniLang {
                 return $this->callFunctionCallerService($nameFunction,$args);
             }
             // the call is the form nameFunction(somevar) or somevar.nameFunction()
-            if (is_array($args[0]) && isset($args[0][$nameFunction])) {
+            if (is_array($args[0])) {
                 // someobject.field (nameFunction acts as a field name)
-                return $args[0][$nameFunction];
+                switch ($nameFunction) {
+                    case '_count':
+                        return count($args[0]);
+                    case '_first':
+                        return reset($args[0]);
+                    case '_last':
+                        return end($args[0]);
+                    default:
+                        if (isset($args[0][$nameFunction])) {
+                            return $args[0][$nameFunction];
+                        }
+                }
             }
         }
         return $this->callFunctionCallerService($nameFunction,$args);
@@ -821,7 +854,8 @@ class MiniLang {
                 if (method_exists($this->caller, 'dateLastChange')) {
                     return time() - $this->caller->dateLastChange();
                 }
-                trigger_error("caller doesn't define field or method dateLastChange");
+                $error="caller doesn't define field or method dateLastChange";
+                $this->throwError($error);
                 break;
             case 'fullinterval':
                 if (isset($this->caller->dateInit)) {
@@ -830,10 +864,12 @@ class MiniLang {
                 if (method_exists($this->caller, 'dateInit')) {
                     return time() - $this->caller->dateInit();
                 }
-                trigger_error("caller doesn't define field or method dateInit");
+                $error="caller doesn't define field or method dateInit";
+                $this->throwError($error);
                 break;
             default:
-                trigger_error("function [$nameFunction] is not defined");
+                $error="function [$nameFunction] is not defined";
+                $this->throwError($error);
                 break;
         }
 
@@ -956,7 +992,8 @@ class MiniLang {
             case 'special':
                 return $name;
             default:
-                trigger_error("value with type[$type] not defined");
+                $error="value with type[$type] not defined";
+                $this->throwError($error);
                 return null;
         }
         return $r;
@@ -1224,7 +1261,8 @@ class MiniLang {
             $position = (!$position) ? 'init' : $position;
             $this->{$position}[$this->langCounter][] = ['logic', $name];
         } else {
-            trigger_error("Error: Logic operation in the wrong place");
+            $error="Error: Logic operation in the wrong place";
+            $this->throwError($error);
         }
 
     }
