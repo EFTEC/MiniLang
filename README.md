@@ -559,6 +559,8 @@ We call the some operations 1000 times.
 
 ## Version
 
+* 2.17.1 2020-10-13
+    * Fixed a bug when the field is a number variable.30=30    
 * 2.17 2020-10-13
     * Added new field **$throwError** and **$errorLog**.  Now the library throws an error (by default) if an error is found, instead of a trigger_error
     * The logic **AND** is optimized, if the first expression is false, then the second expression is never evaluated.

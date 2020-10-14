@@ -15,7 +15,7 @@ use RuntimeException;
  *
  * @package  eftec\minilang
  * @author   Jorge Patricio Castro Castillo <jcastro arroba eftec dot cl>
- * @version  2.17 2020-10-13
+ * @version  2.17.1 2020-10-13
  * @link     https://github.com/EFTEC/MiniLang
  * @license  LGPL v3 (or commercial if it's licensed)
  */
@@ -177,7 +177,7 @@ class MiniLang {
         $this->else[$this->langCounter] = [];
         $this->init[$this->langCounter] = [];
         $rToken = token_get_all("<?php " . $miniScript);
-
+        //var_dump($rToken);
         $rToken[] = ''; // avoid last operation
         $count = count($rToken) - 1;
         $first = true;
@@ -282,17 +282,24 @@ class MiniLang {
                                     $first = true;
                                     break;
                                 default:
-                                    // fix for $aaa.2 
-                                    if (is_array($rTokenNext) && $rTokenNext[0] == T_DNUMBER
+                                    // fix for aaa.2 
+                                    if (is_array($rTokenNext) && ($rTokenNext[0] == T_DNUMBER || $rTokenNext[0] == T_EVAL)
                                         && $rTokenNext[1][0] === '.'
                                     ) {
-                                        $rToken[$i + 2] = [T_STRING, substr($rTokenNext[1], 1)];
+                                        //var_dump($rTokenNext);
+                                        //$rToken[$i + 2] = [T_STRING, substr($rTokenNext[1], 1)];
+                                        //array_splice( $rToken, $i+2, 0, [T_STRING, substr($rTokenNext[1], 1)] );
+                                        array_splice( $rToken, $i+2, 0, [[T_STRING, substr($rTokenNext[1], 1)]] );
+                                        //$rToken[$i+2]=[T_STRING, substr($rTokenNext[1], 1)];
+                                        $count++;
                                         $rTokenNext = '.';
                                     }
                                     if (is_string($rTokenNext)) {
                                         if ($rTokenNext === '.') {
                                             if (@$rToken[$i + 3] !== '(') {
                                                 // field.vvv
+                                                //var_dump( "adding field $first");
+                                                //var_dump($rToken[$i+2][1]);
                                                 $this->addBinOper($first, $position, $inFunction, 'subfield', $v[1],
                                                     $rToken[$i + 2][1]);
                                                 $i += 2;
