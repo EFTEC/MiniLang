@@ -14,10 +14,11 @@ For example :
 [![Build Status](https://travis-ci.org/EFTEC/MiniLang.svg?branch=master)](https://travis-ci.org/EFTEC/MiniLang)
 [![Packagist](https://img.shields.io/packagist/v/eftec/minilang.svg)](https://packagist.org/packages/eftec/minilang)
 [![Total Downloads](https://poser.pugx.org/eftec/minilang/downloads)](https://packagist.org/packages/eftec/minilang)
-[![Maintenance](https://img.shields.io/maintenance/yes/2020.svg)]()
+[![Maintenance](https://img.shields.io/maintenance/yes/2021.svg)]()
 [![composer](https://img.shields.io/badge/composer-%3E1.8-blue.svg)]()
 [![php](https://img.shields.io/badge/php->5.6-green.svg)]()
 [![php](https://img.shields.io/badge/php-7.x-green.svg)]()
+[![php](https://img.shields.io/badge/php-8.x-green.svg)]()
 [![CocoaPods](https://img.shields.io/badge/docs-70%25-yellow.svg)]()
 
 ## Why we need a mini script?
