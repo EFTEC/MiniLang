@@ -3,6 +3,7 @@
 namespace eftec\tests;
 
 use eftec\minilang\MiniLang;
+use Exception;
 
 class DummyClass
 {
@@ -32,7 +33,7 @@ class DummyClass
 class CompilationTest extends AbstractMiniLang
 {
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function test1()
     {
@@ -53,7 +54,7 @@ class CompilationTest extends AbstractMiniLang
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function testElse()
     {
@@ -77,7 +78,7 @@ class CompilationTest extends AbstractMiniLang
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function testGlobal()
     {
@@ -99,7 +100,7 @@ class CompilationTest extends AbstractMiniLang
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function testServiceClass()
     {
@@ -116,7 +117,7 @@ class CompilationTest extends AbstractMiniLang
 
     }
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function testMethod()
     {
@@ -133,7 +134,7 @@ class CompilationTest extends AbstractMiniLang
 
     }
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function testFn2()
     {
@@ -150,7 +151,7 @@ class CompilationTest extends AbstractMiniLang
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function testFn3()
     {
@@ -170,7 +171,7 @@ class CompilationTest extends AbstractMiniLang
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function testFunctions()
     {
@@ -215,7 +216,7 @@ class CompilationTest extends AbstractMiniLang
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function testFn4()
     {
@@ -233,7 +234,7 @@ class CompilationTest extends AbstractMiniLang
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function test2()
     {

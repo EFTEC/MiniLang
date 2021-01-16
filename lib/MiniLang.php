@@ -1,4 +1,6 @@
-<?php /** @noinspection NotOptimalIfConditionsInspection */
+<?php /** @noinspection UnknownInspectionInspection */
+/** @noinspection PhpUnused */
+/** @noinspection NotOptimalIfConditionsInspection */
 /** @noinspection TypeUnsafeArraySearchInspection */
 /** @noinspection MultiAssignmentUsageInspection */
 /** @noinspection PhpRedundantVariableDocTypeInspection */
@@ -15,7 +17,7 @@ use RuntimeException;
  *
  * @package  eftec\minilang
  * @author   Jorge Patricio Castro Castillo <jcastro arroba eftec dot cl>
- * @version  2.17.1 2020-10-13
+ * @version  2.18 2021-01-16
  * @link     https://github.com/EFTEC/MiniLang
  * @license  LGPL v3 (or commercial if it's licensed)
  */
@@ -116,7 +118,7 @@ class MiniLang {
      * @return mixed
      */
     public function getDictEntry($name) {
-        return @$this->dict[$name];
+        return isset($this->dict[$name]) ? $this->dict[$name] : null;
     }
 
     /**
@@ -193,10 +195,10 @@ class MiniLang {
                         $txt = substr($v[1], 1, -1);
                         if (strpos($txt, '{{') === false) {
                             $this->addBinOper($first, $position, $inFunction, 'string'
-                                , substr($v[1], 1, -1), null);
+                                , substr($v[1], 1, -1));
                         } else {
                             $this->addBinOper($first, $position, $inFunction, 'stringp'
-                                , substr($v[1], 1, -1), null);
+                                , substr($v[1], 1, -1));
                         }
                         break;
                     case T_VARIABLE:
@@ -206,7 +208,7 @@ class MiniLang {
                             $rTokenNext = '.';
                         }
                         if (is_string($rTokenNext) && $rTokenNext === '.') {
-                            if (@$rToken[$i + 3] !== '(') {
+                            if (isset($rToken[$i + 3]) && $rToken[$i + 3] !== '(') {
                                 // $var.vvv
                                 $this->addBinOper($first, $position, $inFunction, 'subvar'
                                     , substr($v[1], 1), $rToken[$i + 2][1]);
@@ -215,7 +217,7 @@ class MiniLang {
                                 // $field.vvv(arg,arg) = vvv($field,arg,arg)
 
                                 $this->addBinOper($first, $position, $inFunction, 'fn'
-                                    , $rToken[$i + 2][1], null);
+                                    , $rToken[$i + 2][1]);
                                 $inFunction = true;
                                 //  $this->addParam($position, 'field', $v[1]);
                                 //$this->addParam($position, 'var', $v[1]);
@@ -224,13 +226,13 @@ class MiniLang {
                             }
                         } else {
                             // $var
-                            $this->addBinOper($first, $position, $inFunction, 'var', substr($v[1], 1), null);
+                            $this->addBinOper($first, $position, $inFunction, 'var', substr($v[1], 1));
                         }
                         break;
                     case T_LNUMBER:
                     case T_DNUMBER:
                         $this->addBinOper($first, $position, $inFunction, 'number'
-                            , $v[1], null);
+                            , $v[1]);
                         break;
                     case T_ELSE:
                         //adding a new else
@@ -296,7 +298,7 @@ class MiniLang {
                                     }
                                     if (is_string($rTokenNext)) {
                                         if ($rTokenNext === '.') {
-                                            if (@$rToken[$i + 3] !== '(') {
+                                            if (isset($rToken[$i + 3]) && $rToken[$i + 3] !== '(') {
                                                 // field.vvv
                                                 //var_dump( "adding field $first");
                                                 //var_dump($rToken[$i+2][1]);
@@ -307,7 +309,7 @@ class MiniLang {
                                                 // $v[1].$rToken[$i+2][1]
                                                 // field.vvv(arg,arg) = vvv(field,arg,arg)
                                                 $this->addBinOper($first, $position, $inFunction, 'fn'
-                                                    , $rToken[$i + 2][1], null);
+                                                    , $rToken[$i + 2][1]);
                                                 $inFunction = true;
                                                 $this->addParam($position, 'field', $v[1]);
                                                 $i += 3;
@@ -327,17 +329,16 @@ class MiniLang {
                                             $inFunction = true;
                                             ++$i;
                                         } elseif (in_array($v[1], $this->specialCom)) {
-                                            $this->addBinOper($first, $position, $inFunction, 'special', $v[1],
-                                                null);
+                                            $this->addBinOper($first, $position, $inFunction, 'special', $v[1]);
                                             $first = true;
                                         } else {
-                                            $this->addBinOper($first, $position, $inFunction, 'field', $v[1], null);
+                                            $this->addBinOper($first, $position, $inFunction, 'field', $v[1]);
                                         }
                                     } elseif (in_array($v[1], $this->specialCom)) {
-                                        $this->addBinOper($first, $position, $inFunction, 'special', $v[1], null);
+                                        $this->addBinOper($first, $position, $inFunction, 'special', $v[1]);
                                         $first = true;
                                     } else {
-                                        $this->addBinOper($first, $position, $inFunction, 'field', $v[1], null);
+                                        $this->addBinOper($first, $position, $inFunction, 'field', $v[1]);
                                     }
                                     break;
                             }
@@ -376,7 +377,7 @@ class MiniLang {
                                 || $rTokenNext[0] == T_DNUMBER)
                         ) {
                             // it's a negative value
-                            $this->addBinOper($first, $position, $inFunction, 'number', -$rTokenNext[1], null);
+                            $this->addBinOper($first, $position, $inFunction, 'number', -$rTokenNext[1]);
                             $i++;
                         } else {
                             // its a minus
@@ -653,7 +654,7 @@ class MiniLang {
             if ($v[0] === 'pair') {
                 $name = $v[2];
                 $ext = $v[3];
-                $op = @$v[4];
+                $op = isset($v[4])?$v[4]:null;
                 //$field0=$this->getValue($v[1],$v[2],$v[3],$this->caller,$dictionary);
                 if (count($v) > 5) {
                     $field1 = $this->getValue($v[5], $v[6], $v[7]);
@@ -693,7 +694,7 @@ class MiniLang {
                 switch ($v[1]) {
                     case 'subvar':
                         // $a.field
-                        $rname = @$GLOBALS[$name];
+                        $rname = isset($GLOBALS[$name]) ? $GLOBALS[$name] : null;
                         if (is_object($rname)) {
                             $rname->{$ext} = $field1;
                         } else {
@@ -850,7 +851,7 @@ class MiniLang {
             case 'undef':
                 return -1;
             case 'flip':
-                return (!@$args[0]) ? 1 : 0;
+                return (isset($args[0]) && $args[0]) ? 0:1;
             case 'now':
             case 'timer':
                 return time();
@@ -948,7 +949,7 @@ class MiniLang {
      * @param string       $name name of the value. It is also used for the value of the variable.
      *                           <p> myvar => type=var, name=myvar</p>
      *                           <p> 123 => type=number, name=123</p>
-     * @param string|array $ext  it is used for subvar, subfield and functions
+     * @param string|array|null $ext  it is used for subvar, subfield and functions
      *
      * @return bool|int|mixed|string|null
      */
@@ -956,16 +957,17 @@ class MiniLang {
         switch ($type) {
             case 'subvar':
                 // $a.field
-                $rname = @$GLOBALS[$name];
+                $rname = isset($GLOBALS[$name]) ? $GLOBALS[$name] : null;
                 if ($ext[0] === '$') {
                     // $a.$b
-                    $ext = @$GLOBALS[substr($ext, 1)];
+                    $subext=substr($ext, 1);
+                    $ext = isset($GLOBALS[$subext]) ? $GLOBALS[$subext] : null;
                 }
                 $r = (is_object($rname)) ? $rname->{$ext} : $rname[$ext];
                 break;
             case 'var':
                 // $a
-                $r = @$GLOBALS[$name];
+                $r = isset($GLOBALS[$name]) ? $GLOBALS[$name] : null;
                 break;
             case 'number':
                 // 20
@@ -981,11 +983,11 @@ class MiniLang {
 
                 break;
             case 'field':
-                $r = @$this->dict[$name];
+                $r = isset($this->dict[$name]) ? $this->dict[$name] : null;
                 break;
             case 'subfield':
                 // field.sum is equals to sum(field)
-                $args = [@$this->dict[$name]];
+                $args = [isset($this->dict[$name])? $this->dict[$name] : null];
                 $r = $this->callFunction($ext, $args);
                 break;
             case 'fn':
@@ -1018,11 +1020,11 @@ class MiniLang {
         return preg_replace_callback('/{{\s?(\w+)\s?}}/u', function ($matches) {
             if (is_array($matches)) {
                 $item = substr($matches[0], 2, -2); // removes {{ and }}
-                return @$this->dict[$item];
+                return isset($this->dict[$item]) ? $this->dict[$item] : null;
             }
 
             $item = substr($matches, 2, -2); // removes {{ and }}
-            return @$this->dict[$item];
+            return isset($this->dict[$item]) ? $this->dict[$item] : null;
         }, $string);
     }
 
@@ -1109,8 +1111,8 @@ class MiniLang {
             $p = 0;
             $type = $item[$p];
             $i1 = $item[$p + 1];
-            @$i2 = $item[$p + 2];
-            @$i3 = $item[$p + 3];
+            //$i2 = isset($item[$p + 2]) ? $item[$p + 2] : null;
+            //$i3 = isset($item[$p + 3]) ? $item[$p + 3] : null;
             $p = 1;
             switch ($type) {
                 case 'pair':
@@ -1182,8 +1184,8 @@ class MiniLang {
      */
     private function compileTokenField($arrayToken, &$startPosition, &$code) {
         $i1 = $arrayToken[$startPosition];
-        @$i2 = $arrayToken[$startPosition + 1];
-        @$i3 = $arrayToken[$startPosition + 2];
+        $i2 = isset($arrayToken[$startPosition + 1]) ? $arrayToken[$startPosition + 1] : null;
+        $i3 = isset($arrayToken[$startPosition + 1]) ? $arrayToken[$startPosition + 2] : null;
         switch ($i1) {
             case 'fn':
                 // fn(1),functioname(2),arguments(3 it could be array)

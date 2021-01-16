@@ -3,13 +3,17 @@ A mini script language for PHP.  It does three simple tasks.
 
 1. (optional) It set some initial values **(INIT)**.
 2. It evaluates a logic expression **(WHERE)**.
-3. And if the expression (logic) is true then it executes the SET expression **(SET)**.
+3. If the expression (logic) is true then it executes the SET expression **(SET)**.
+4. (optional) If the expression (logic) is false then it executes the ELSE expression **(INIT)**.
 
 For example :
 
-> when var1>5 and var2>20 then var3=20
-
-> init var5=20 when var1>5 and var2>20 then var3=var5
+```
+when var1>5 and var2>20 then var3=20 // when and then 
+init var5=20 when var1>5 and var2>20 then var3=var5  // init, when and then
+init var5=20 when var1>5 and var2>20 then var3=var5 else var3=var20 // init, when, then and else
+when var1>$abc then var3=var5 // $abc is a PHP variable.
+```
 
 [![Build Status](https://travis-ci.org/EFTEC/MiniLang.svg?branch=master)](https://travis-ci.org/EFTEC/MiniLang)
 [![Packagist](https://img.shields.io/packagist/v/eftec/minilang.svg)](https://packagist.org/packages/eftec/minilang)
@@ -560,6 +564,8 @@ We call the some operations 1000 times.
 
 ## Version
 
+* 2.18 2021-01-16
+    * Some cleanups. The operator "@" impacts the performance of PHP, so it is better to use isset(x)?x:null rather than @x
 * 2.17.1 2020-10-13
     * Fixed a bug when the field is a number variable.30=30    
 * 2.17 2020-10-13
