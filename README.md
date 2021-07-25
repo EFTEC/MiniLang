@@ -564,6 +564,8 @@ We call the some operations 1000 times.
 
 ## Version
 
+* 2.18.1 2021-08-25
+   * Fixed a problem where the language calls a custom function and there is not a service class.   
 * 2.18 2021-01-16
     * Some cleanups. The operator "@" impacts the performance of PHP, so it is better to use isset(x)?x:null rather than @x
 * 2.17.1 2020-10-13

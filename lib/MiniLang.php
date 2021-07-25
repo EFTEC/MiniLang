@@ -17,7 +17,7 @@ use RuntimeException;
  *
  * @package  eftec\minilang
  * @author   Jorge Patricio Castro Castillo <jcastro arroba eftec dot cl>
- * @version  2.18 2021-01-16
+ * @version  2.18. 2021-07-25
  * @link     https://github.com/EFTEC/MiniLang
  * @license  LGPL v3 (or commercial if it's licensed)
  */
@@ -46,7 +46,7 @@ class MiniLang {
     public $serviceClass;
     /** @var object for callbacks */
     private $caller;
-    
+
     public $throwError=true;
     public $errorLog=[];
     private $debugLine=0;
@@ -479,10 +479,8 @@ class MiniLang {
         if ($this->elseTxt[$line]) {
             $code .= $align . "} else {\n";
             $code .= $align . "\t" . str_replace("\n", "\n" . $align, $this->elseTxt[$line]) . "\n";
-            $code .= $align . "}\n";
-        } else {
-            $code .= $align . "}\n";
         }
+        $code .= $align . "}\n";
         return $code;
     }
 
@@ -547,7 +545,7 @@ class MiniLang {
         if (count($this->where[$numLine]) === 0) {
             return true;
         } // no where = true
-        foreach ($this->where[$numLine] as $k => $v) {
+        foreach ($this->where[$numLine] as $v) {
             if ($v[0] === 'pair') {
                 if ($v[1] === 'special') {
 
@@ -560,7 +558,7 @@ class MiniLang {
 
                 $field0 = $this->getValue($v[1], $v[2], $v[3]);
                 if (count($v) <= 4) {
-                    return $field0 ? true : false;
+                    return (bool)$field0;
                 }
                 if (count($v) >= 8) {
                     $field1 = $this->getValue($v[5], $v[6], $v[7]);
@@ -590,7 +588,7 @@ class MiniLang {
                         $r = (strpos($field0, $field1) !== false);
                         break;
                     default:
-                        $error="comparison {$v[4]} not defined for eval logic.";
+                        $error="comparison $v[4] not defined for eval logic.";
                         $this->throwError($error);
                 }
                 switch ($addType) {
@@ -608,7 +606,7 @@ class MiniLang {
                 $addType = $v[1];
                 if($addType==='and' && !$r) {
                     return false;
-                } 
+                }
             }
         } // for
         return $r;
@@ -650,7 +648,7 @@ class MiniLang {
     public function evalSet($numLine = 0, $position = 'set') {
         $position = (!$position) ? 'init' : $position;
         $exp = $this->{$position}[$numLine];
-        foreach ($exp as $k => $v) {
+        foreach ($exp as $v) {
             if ($v[0] === 'pair') {
                 $name = $v[2];
                 $ext = $v[3];
@@ -719,8 +717,8 @@ class MiniLang {
                     case 'number':
                     case 'string':
                     case 'stringp':
-                        $error="Literal [{$v[2]}] of the type [{$v[1]}] is not for set.";
-                        $this->throwError($error);                        
+                        $error="Literal [$v[2]] of the type [$v[1]] is not for set.";
+                        $this->throwError($error);
                         break;
                     case 'field':
                         switch ($op) {
@@ -753,7 +751,7 @@ class MiniLang {
                         $this->callFunctionSet($name, $args, $field1);
                         break;
                     default:
-                        $error="set {$v[4]} not defined for transaction.";
+                        $error="set $v[4] not defined for transaction.";
                         $this->throwError($error);
                         break;
                 }
@@ -826,7 +824,7 @@ class MiniLang {
                 return $this->caller[$nameFunction];
             }
         }
-        if (method_exists($this->serviceClass, $nameFunction)) {
+        if ($this->serviceClass!==null && method_exists($this->serviceClass, $nameFunction)) {
             return call_user_func_array(array($this->serviceClass, $nameFunction), $args);
         }
 
@@ -1087,12 +1085,11 @@ class MiniLang {
      */
     private function addOp($position, &$first, $opName) {
         $position = (!$position) ? 'init' : $position;
+        $f = count($this->{$position}[$this->langCounter]) - 1;
         if ($first) {
-            $f = count($this->{$position}[$this->langCounter]) - 1;
             $this->{$position}[$this->langCounter][$f][4] = $opName;
             $first = false;
         } else {
-            $f = count($this->{$position}[$this->langCounter]) - 1;
             $this->{$position}[$this->langCounter][$f][] = $opName;
         }
     }

@@ -1,7 +1,6 @@
 {
     "name": "eftec/minilang",
     "description": "A mini scripting language for php",
-    "version": "2.18",
     "type": "library",
     "keywords": [
         "php"
