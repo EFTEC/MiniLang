@@ -566,6 +566,8 @@ We call the some operations 1000 times.
 
 ## Version
 
+* 2.20 2021-09-26
+   * It allows more features when it uses a class with the values pre-calculated
 * 2.19 2021-09-26
    * It allows to save the library into a PHP native class.
 * 2.18.1 2021-08-25

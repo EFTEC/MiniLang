@@ -19,10 +19,11 @@ $mini->separate2("when field1.id>=20 and field1.id<30 then
                 field2.value=\$a.param('a.b.c')
 				and processcaller(field3) 
 				and processservice(field3)");
-file_put_contents('ExampleBasicClass2.php'
-    ,"<?php\n".
-    "use eftec\minilang\MiniLang;\n".
-    "// this class is generated!\n".
-    $mini->generateClass2('ExampleBasicClass2',false));
+$mini->separate2("then 
+                field2.value=\$a.param('a.b.c')
+				and processcaller(field3) 
+				and processservice(field3)");
+
+$mini->generateClass('ExampleBasicClass2','','ExampleBasicClass2.php');
 
 echo "<b>Class ExampleBasicClass2 generated</b> ";

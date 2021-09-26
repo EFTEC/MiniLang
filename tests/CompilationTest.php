@@ -92,7 +92,7 @@ class CompilationTest extends AbstractMiniLang
         $this->mini->reset();
         $this->mini->separate2("when field1=1 and field1=2 then field2=30*3");
         $this->mini->separate2("when field1=1 then field2.fn2=20 else field2.fn3=30");
-        $a1=$this->mini->generateClass2('Class2',true,true);
+        $a1=$this->mini->generateClass('Class2',true,true);
         var_dump($a1);
     }
     public function testSeparate2()

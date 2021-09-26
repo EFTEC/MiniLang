@@ -1,5 +1,6 @@
 <?php
 use eftec\minilang\MiniLang;
+use ns\example\ExampleBasicClass;
 
 include "../../lib/MiniLang.php";
 include "ExampleBasicClass.php";
@@ -10,5 +11,5 @@ $result=['var1'=>'hello','var3'=>false,'comp'=>['f'=>false]];
 var_dump($result);
 echo "<br>";
 $obj=new ExampleBasicClass(null,$result);
-$obj->evalAllLogic2();
+$obj->evalAllLogic();
 var_dump($result);
