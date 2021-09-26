@@ -25,6 +25,7 @@ $arr=[10,20,30,40,'a'=>666];
 $mini->separate('when true() and field1=555 and field3.ff=field4.ff2
 then field1=xyz and fieldsum=123+456 and field3=321+789 and field4="xx" + "yy" and $field5=myfn(1,2,3) and $field6=a1.myfn(4,5) ');
 $mini->separate("when field1=2 then field2=4");
+//$mini->exp()->when('field1','=',2)->then('field2','=',4);
 
 
 echo "<br>where:<br>";

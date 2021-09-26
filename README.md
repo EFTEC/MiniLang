@@ -266,8 +266,8 @@ $mini=new MiniLang(null,
 vararray.associndex // vararray['associindex'] ('hi')
 vararray.4 // vararray[4] 'last'
 vararray.123 // it will throw an error.
-vararray.param('a.b.c') // vararray['a']['b']['c'] ('nested')
-param(vararray,'a.b.c') // vararray['a']['b']['c'] ('nested')
+vararray.param('a.b.c')) // vararray['a']['b']['c'] ('nested')
+param(vararray,'a.b.c')) // vararray['a']['b']['c'] ('nested')
 vararray._first // first element ('hi')
 vararray._last // last element ('last')
 vararray._count // returns the number of elements. (6)
@@ -490,6 +490,8 @@ We could set a variable using the next expressions:
 * variable=20 
 * variable=anothervariable
 * variable=20+30
+* variable=20-30 // it will not work correctly because it will consider the -30 as a negative number "-30" and not "20 minus 30"
+* variable=20+-30 // it work work as expected 
 * variable=40*50+30
 * variable+30 // it increases the variable by 30
 * variable-30 // it decreases the variable by -30
@@ -564,6 +566,8 @@ We call the some operations 1000 times.
 
 ## Version
 
+* 2.19 2021-09-26
+   * It allows to save the library into a PHP native class.
 * 2.18.1 2021-08-25
    * Fixed a problem where the language calls a custom function and there is not a service class.   
 * 2.18 2021-01-16
