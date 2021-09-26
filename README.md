@@ -566,6 +566,11 @@ We call the some operations 1000 times.
 
 ## Version
 
+* 2.20.1 2021-09-26
+   * Fixed: "<>" in comparison.
+   * Fixed a comparison with zero. Now, zero are converted (in the PHP class) as "0" instead of 0. Why? It is because field==null is equals than field==0. However, field=='0' is not equals
+   * Class generated now it is more compressed.
+   * Special functions are now correctly stored in the class generated
 * 2.20 2021-09-26
    * It allows more features when it uses a class with the values pre-calculated
 * 2.19 2021-09-26

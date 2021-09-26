@@ -18,13 +18,13 @@ use RuntimeException;
  *
  * @package  eftec\minilang
  * @author   Jorge Patricio Castro Castillo <jcastro arroba eftec dot cl>
- * @version  2.20 2021-07-25
+ * @version  2.20.1 2021-07-25
  * @link     https://github.com/EFTEC/MiniLang
  * @license  LGPL v3 (or commercial if it's licensed)
  */
 class MiniLang
 {
-    const VERSION='2.20';
+    const VERSION='2.20.1';
     /** @var array When operators (if any) */
     public $where = [];
     /** @var array Set operators (if any) */
@@ -708,7 +708,13 @@ class MiniLang
                 break;
             case 'number':
                 // number(1).value(2).null(3)
-                $code[] = $i2;
+                if($i2===0 || $i2==='0') {
+                    // why? it is because field==null is equals than field==0
+                    // however, field==null is not equals to field=='0'
+                    $code[] = "'$i2'";
+                } else {
+                    $code[] = $i2;
+                }
                 $startPosition += 3;
                 break;
             case 'string':
@@ -718,6 +724,10 @@ class MiniLang
                 break;
             case 'stringp':
                 $code[] = "\$this->getValueP('$i2')";
+                $startPosition += 3;
+                break;
+            case 'special':
+                $code[] = "\$this->caller->$i2($i3)";
                 $startPosition += 3;
                 break;
             default:
@@ -743,6 +753,9 @@ class MiniLang
                 break;
             case '&':
                 $r = '.';
+                break;
+            case '<>':
+                $r = '!=';
                 break;
             default:
                 $r = $i1;
@@ -815,71 +828,10 @@ class MiniLang
         $code .= "\tpublic \$numCode=" . ($this->langCounter + 1) . "; // num of lines of code \n";
         $code .= "\tpublic \$usingClass=true; // if true then we are using a class (this class) \n";
 
-        $code .= "\tpublic function whereRun(\$lineCode=0) {\n";
-        $code .= "\t\tswitch(\$lineCode) {\n";
-        for ($i = 0; $i <= $this->langCounter; $i++) {
-            $code .= "\t\t\tcase $i:\n";
-            $code .= "\t\t\t\t\$result=" . ($this->whereTxt[$i] ? $this->whereTxt[$i] : 'true') . ";\n";
-            $code .= "\t\t\t\tbreak;\n";
-        }
-        $code .= "\t\t\tdefault:\n";
-        $code .= "\t\t\t\t\$result=false;\n";
-        $code .= "\t\t\t\t\$this->throwError('Line '.\$lineCode.' is not defined');\n";
-        $code .= "\t\t}\n";
-        $code .= "\t\treturn \$result;\n";
-        $code .= "\t} // end function WhereRun\n";
-        // SetRun
-        $code .= "\tpublic function setRun(\$lineCode=0) {\n";
-        $code .= "\t\tswitch(\$lineCode) {\n";
-        $align = "\t\t\t";
-        for ($i = 0; $i <= $this->txtCounter; $i++) {
-            $code .= "\t\t\tcase $i:\n";
-            if ($this->setTxt[$i]) {
-                $txt = str_replace("\n", "\n" . $align . "\t", $this->setTxt[$i]);
-                $code .= "\t\t\t\t" . $txt;
-            }
-            $code = rtrim($code) . "\n";
-            $code .= "\t\t\t\tbreak;\n";
-        }
-        $code .= "\t\t\tdefault:\n";
-        $code .= "\t\t\t\t\$this->throwError('Line '.\$lineCode.' is not defined');\n";
-        $code .= "\t\t}\n";
-        $code .= "\t} // end function SetRun\n";
-        // ElseRun
-        $code .= "\tpublic function elseRun(\$lineCode=0) {\n";
-        $code .= "\t\tswitch(\$lineCode) {\n";
-        $align = "\t\t\t";
-        for ($i = 0; $i <= $this->txtCounter; $i++) {
-            $code .= "\t\t\tcase $i:\n";
-            if ($this->elseTxt[$i]) {
-                $txt = str_replace("\n", "\n" . $align . "\t", $this->elseTxt[$i]);
-                $code .= "\t\t\t\t" . $txt;
-            }
-            $code = rtrim($code) . "\n";
-            $code .= "\t\t\t\tbreak;\n";
-        }
-        $code .= "\t\t\tdefault:\n";
-        $code .= "\t\t\t\t\$this->throwError('Line '.\$lineCode.' is not defined');\n";
-        $code .= "\t\t}\n";
-        $code .= "\t} // end function ElseRun\n";
-
-        // StartRun
-        $code .= "\tpublic function initRun(\$lineCode=0) {\n";
-        $code .= "\t\tswitch(\$lineCode) {\n";
-        $align = "\t\t\t";
-        for ($i = 0; $i <= $this->txtCounter; $i++) {
-            $code .= "\t\t\tcase $i:\n";
-            if ($this->initTxt[$i]) {
-                $txt = str_replace("\n", "\n" . $align . "\t", $this->initTxt[$i]);
-                $code .= "\t\t\t\t" . $txt;
-            }
-            $code = rtrim($code) . "\n";
-            $code .= "\t\t\t\tbreak;\n";
-        }
-        $code .= "\t\t\tdefault:\n";
-        $code .= "\t\t\t\t\$this->throwError('Line '.\$lineCode.' is not defined');\n";
-        $code .= "\t\t}\n";
-        $code .= "\t} // end function InitRun\n";
+        $this->generateClassWhere($code);
+        $this->generateClassSet($code);
+        $this->generateClassSet($code,'else');
+        $this->generateClassSet($code,'init');
 
         $code .= "} // end class\n";
         if ($filename) {
@@ -891,6 +843,94 @@ class MiniLang
             }
         }
         return $code;
+    }
+
+    protected  function generateClassWhere(&$code) {
+        $code .= "\tpublic function whereRun(\$lineCode=0) {\n";
+        $code .= "\t\tswitch(\$lineCode) {\n";
+        // group empties
+        $align="\t\t\t";
+        $empties=false;
+        for ($i = 0; $i <= $this->txtCounter; $i++) {
+            if (!$this->whereTxt[$i]) {
+                $empties=true;
+                $code .= $align."case $i:\n";
+            }
+        }
+        if($empties) {
+            $code .= $align."\treturn true; // nothing to do\n";
+        }
+        for ($i = 0; $i <= $this->langCounter; $i++) {
+            if($this->whereTxt[$i]) {
+                $code .= "\t\t\tcase $i:\n";
+                $code .= "\t\t\t\t\$result=" . $this->whereTxt[$i] . ";\n";
+                $code .= "\t\t\t\tbreak;\n";
+            }
+        }
+        $code .= "\t\t\tdefault:\n";
+        $code .= "\t\t\t\t\$result=false;\n";
+        $code .= "\t\t\t\t\$this->throwError('Line '.\$lineCode.' is not defined');\n";
+        $code .= "\t\t}\n";
+        $code .= "\t\treturn \$result;\n";
+        $code .= "\t} // end function WhereRun\n";
+    }
+    protected function generateClassSet(&$code,$type='set') {
+        // SetRun *****************
+        $code .= "\tpublic function {$type}Run(\$lineCode=0) {\n";
+        $code .= "\t\tswitch(\$lineCode) {\n";
+        $align = "\t\t\t";
+        // group empties
+        $empties=false;
+        for ($i = 0; $i <= $this->txtCounter; $i++) {
+            switch($type) {
+                case 'set':
+                    $origin =  $this->setTxt[$i];
+                    break;
+                case 'else':
+                    $origin =  $this->elseTxt[$i];
+                    break;
+                case 'init':
+                    $origin =  $this->initTxt[$i];
+                    break;
+                default:
+                    $origin='';
+                    break;
+            }
+            if (!$origin) {
+                $empties=true;
+                $code .= $align."case $i:\n";
+            }
+        }
+        if($empties) {
+            $code .= $align."\tbreak; // nothing to do\n";
+        }
+        for ($i = 0; $i <= $this->txtCounter; $i++) {
+            switch($type) {
+                case 'set':
+                    $origin =  $this->setTxt[$i];
+                    break;
+                case 'else':
+                    $origin =  $this->elseTxt[$i];
+                    break;
+                case 'init':
+                    $origin =  $this->initTxt[$i];
+                    break;
+                default:
+                    $origin = '';
+                    break;
+            }
+            if ($origin) {
+                $code .= $align."case $i:\n";
+                $txt = str_replace("\n", "\n" . $align . "\t", $origin);
+                $code .= $align."\t" . $txt;
+                $code = rtrim($code) . "\n";
+                $code .= $align."\tbreak;\n";
+            }
+        }
+        $code .= "\t\t\tdefault:\n";
+        $code .= "\t\t\t\t\$this->throwError('Line '.\$lineCode.' is not defined for $type');\n";
+        $code .= "\t\t}\n";
+        $code .= "\t} // end function {$type}Run\n";
     }
 
     /**
