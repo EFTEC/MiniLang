@@ -454,7 +454,7 @@ It's possible to compare more than a condition at the same time by separating by
 
 > where 1 // it always true
 
-### Expressions allowed
+### Logical expressions allowed
 
 * **equals:**  = and ==
 * **not equals:** <> and !=
@@ -483,18 +483,19 @@ or
 
 
 
-### Expressions allowed
+### Setting expressions allowed
 
 We could set a variable using the next expressions:
 
 * variable=20 
 * variable=anothervariable
 * variable=20+30
-* variable=20-30 // it will not work correctly because it will consider the -30 as a negative number "-30" and not "20 minus 30"
-* variable=20+-30 // it work work as expected 
+* variable=20-30 // !!!! **it will not work correctly because it will consider the -30 as a negative number "-30" and not "20 minus 30"**
+* variable=20+-30 // however, it work work as expected 
 * variable=40*50+30
 * variable+30 // it increases the variable by 30
-* variable-30 // it decreases the variable by -30
+* variable+=anothervariable // it will increase the variable by the value of anothervariable
+* variable+-30 // it decreases the variable by -30  Note: **variable-30 will not work because the symbol - is not an operator but it indicates a negative value**
 * variable=flip() // it flips the value 0->1 or 1->0
 
 This library does not allow complex instruction such as
@@ -521,7 +522,64 @@ This optional part of the expression allows setting the value of a variable.  It
 
 > else variable1=20 and $variable2=variable3 and function(20)=40
 
-### Benchmark
+
+
+## Compiling the logic into a PHP class
+
+It is possible to create a class with the logic created in the language.  The goal is to increase the performance of the code.
+
+### Creating the class
+
+To generate the class, first we need to write the logic using the method **separate2()** instead of **separate()**.  It will store the logic inside an array of the instance of the class. You could use the code directly or you could save inside a class as follow:
+
+```php
+// create an instance of MiniLang
+$mini=new MiniLang(null);
+// the logic goes here
+$mini->separate2('when var1="hello" and comp.f=false() then var2="world" '); // if var1 is equals "hello" then var2 is set "world"
+// and the generation of the class
+$r=$mini->generateClass('ExampleBasicClass','ns\example','ExampleBasicClass.php');
+```
+
+It will save a new file called 📄 ExampleBasicClass.php  (you can check the example 📁 [example/genclass/1.examplebasic.php]())
+
+### Using the class
+
+With the class generated, you can use this new class instead of **MiniLang**. Since this class is already compiled, then it is blazing fast. However, if you need to change the logic, then you will need to compile it again. (you can check the example 📁 [example/genclass/2.examplebasic.php]() and 📁 [example/genclass/ExampleBasicClass.php]())
+
+```php
+$result=['var1'=>'hello'];
+$obj=new ExampleBasicClass(null,$result); 
+$obj->evalAllLogic();
+```
+
+The class will look like:
+
+```php
+<?php
+namespace ns\example;
+use eftec\minilang\MiniLang;
+class ExampleBasicClass extends MiniLang {
+   public $numCode=2; // num of lines of code 
+   public $usingClass=true; // if true then we are using a class (this class) 
+   public function whereRun($lineCode=0) {
+       // ...
+   } // end function WhereRun
+   public function setRun($lineCode=0) {
+       // ...
+   } // end function SetRun
+   public function elseRun($lineCode=0) {
+       // ...
+   } // end function ElseRun
+   public function initRun($lineCode=0) {
+       // ...       
+   } // end function InitRun
+} // end class
+```
+
+Where each method evaluates a part of the expression.
+
+## Benchmark
 
 [examples/examplebenchmark.php](examples/examplebenchmark.php)
 
@@ -553,7 +611,7 @@ We call the some operations 1000 times.
 
 * We create a class with the method $mini->generateClass2(); 1 time
 * Then, we call the class (as simple php code) 1000 times.
-* Speed: 0.000763 seconds. Comparison: 1.23% (smaller is better) it is the fastest.
+* Speed: 0.000763 seconds. Comparison: 1.23% (smaller is better). It is the fastest method.
 
 ## Documentation
 
@@ -566,6 +624,8 @@ We call the some operations 1000 times.
 
 ## Version
 
+* 2.20.2 2021-09-26
+   * Fixed the generation of the class when the number is negative.
 * 2.20.1 2021-09-26
    * Fixed: "<>" in comparison.
    * Fixed a comparison with zero. Now, zero are converted (in the PHP class) as "0" instead of 0. Why? It is because field==null is equals than field==0. However, field=='0' is not equals

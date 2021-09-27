@@ -18,13 +18,13 @@ use RuntimeException;
  *
  * @package  eftec\minilang
  * @author   Jorge Patricio Castro Castillo <jcastro arroba eftec dot cl>
- * @version  2.20.1 2021-07-25
+ * @version  2.20.2 2021-07-25
  * @link     https://github.com/EFTEC/MiniLang
  * @license  LGPL v3 (or commercial if it's licensed)
  */
 class MiniLang
 {
-    const VERSION='2.20.1';
+    const VERSION='2.20.2';
     /** @var array When operators (if any) */
     public $where = [];
     /** @var array Set operators (if any) */
@@ -307,6 +307,7 @@ class MiniLang
                         break;
                     case T_LNUMBER:
                     case T_DNUMBER:
+                        // los negativos no van aqui
                         $this->addBinOper($first, $position, $inFunction, 'number'
                             , $v[1]);
                         break;
@@ -683,7 +684,20 @@ class MiniLang
                 if ($i3 === null) {
                     $code[] = "\$this->dict['$i2']";
                 } else {
-                    $code[] = "\$this->dict['$i2']['$i3']";
+                    switch ($i3) {
+                        case '_first':
+                            $code[] = "\$this->dict['$i2'][0]";
+                            break;
+                        case '_last':
+                            $code[] = "\end(\$this->dict['$i2'])";
+                            break;
+                        case '_count':
+                            $code[] = "\count(\$this->dict['$i2'])";
+                            break;
+                        default:
+                            $code[] = "\$this->dict['$i2']['$i3']";
+                    }
+
                 }
                 $startPosition += 3;
                 break;
@@ -692,7 +706,19 @@ class MiniLang
                 if ($i3 === null) {
                     $code[] = "\$this->dict['$i2']";
                 } else {
-                    $code[] = "\$this->dict['$i2']['$i3']";
+                    switch ($i3) {
+                        case '_first':
+                            $code[] = "\$this->dict['$i2'][0]";
+                            break;
+                        case '_count':
+                            $code[] = "\count(\$this->dict['$i2'])";
+                            break;
+                        case '_last':
+                            $code[] = "\end(\$this->dict['$i2'])";
+                            break;
+                        default:
+                            $code[] = "\$this->dict['$i2']['$i3']";
+                    }
                 }
                 $startPosition += 3;
                 break;
@@ -750,6 +776,13 @@ class MiniLang
         switch ($i1) {
             case '=':
                 $r = ($position === 'where') ? '==' : '=';
+                break;
+            case '+':
+                $r = ($position === 'set' && $startPosition===4) ? '+=' : '+';
+                break;
+            case '-':
+
+                $r = ($position === 'set' && $startPosition===4) ? '-=' : '-';
                 break;
             case '&':
                 $r = '.';

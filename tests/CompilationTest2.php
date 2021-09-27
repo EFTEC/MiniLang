@@ -254,6 +254,36 @@ class CompilationTest extends AbstractMiniLang
 
     }
 
+    public function test3add()
+    {
+        $this->mini->reset();
+        $caller = new DummyClass();
+        $caller->values = ['field1' => 1, 'field2' => 12345, 'field3' => 3, 'field4' => 4,'field6'=>[1,2]];
+
+        $this->mini = new MiniLang($caller, $caller->values);
+        $this->mini->separate2("then field4+1+2 and field5+1+2 and field6._count>1 "); // only the first "+" is converted to +=
+
+        self::assertEquals([
+            '$this->dict[\'field4\']+=1+2;'."\n".
+            '$this->dict[\'field5\']+=1+2;'."\n".
+            '\count($this->dict[\'field6\'])>1;'."\n"
+        ], $this->mini->setTxt);
+    }
+    public function test3rest()
+    {
+        $this->mini->reset();
+        $caller = new DummyClass();
+        $caller->values = ['field1' => 1, 'field2' => 12345, 'field3' => 3, 'field4' => 4,'field6'=>[1,2]];
+
+        $this->mini = new MiniLang($caller, $caller->values);
+        $this->mini->separate2("then field4+-1+-2 and field5+-1+-2 and field6._count>1 "); // only the first "+" is converted to +=
+
+        self::assertEquals([
+            '$this->dict[\'field4\']+=-1+-2;'."\n".
+            '$this->dict[\'field5\']+=-1+-2;'."\n".
+            '\count($this->dict[\'field6\'])>1;'."\n"
+        ], $this->mini->setTxt);
+    }
     public function test3()
     {
         $caller = new DummyClass();
