@@ -18,13 +18,13 @@ use RuntimeException;
  *
  * @package  eftec\minilang
  * @author   Jorge Patricio Castro Castillo <jcastro arroba eftec dot cl>
- * @version  2.20.2 2021-07-25
+ * @version  2.21 2021-10-03
  * @link     https://github.com/EFTEC/MiniLang
  * @license  LGPL v3 (or commercial if it's licensed)
  */
 class MiniLang
 {
-    const VERSION='2.20.2';
+    const VERSION = '2.21';
     /** @var array When operators (if any) */
     public $where = [];
     /** @var array Set operators (if any) */
@@ -33,14 +33,20 @@ class MiniLang
     public $else = [];
     /** @var array Init operators (if any) */
     public $init = [];
+    /** @var array Loop operators (if any) */
+    public $loop = [];
     /** @var string[] */
-    public $whereTxt = [];
+    public $wherePHP = [];
     /** @var string[] */
-    public $setTxt = [];
+    public $setPHP = [];
     /** @var string[] */
-    public $elseTxt = [];
+    public $elsePHP = [];
     /** @var string[] */
-    public $initTxt = [];
+    public $initPHP = [];
+    /** @var string[] */
+    public $loopPHP = [];
+    /** @var string[] */
+    public $commentPHP = [];
     /** @var array */
     public $areaName;
     /** @var array values per the special area */
@@ -49,8 +55,20 @@ class MiniLang
     public $throwError = true;
     public $errorLog = [];
     public $numCode = -1;
-    /** @var bool If true, then this class ins extended by another class that includes the definition of the tasks */
+    /**
+     * @var bool <b>If true</b>: then this class is extended by another class that includes the definition of the
+     *      tasks<br>
+     *           <b>If false</b>: (default value) then the definition of the classes must be evaluated every time
+     */
     public $usingClass = false;
+    /**
+     * @var bool <b>if true</b>: then the variables inside the language are case-sensitive.<br>
+     *           It doesn't consider other variables<br>
+     *           Example: field1=20 and FIELD1=20 are different<br>
+     *           <b>if false</b>: then the variables are not case-sensitive. Howeve, every value stored must be stored
+     *           in a lowercase array<br> Example: field1=20 and FIELD1=20 are the same (but the value must be stored
+     *           in 'field1')<br>
+     */
     public $caseSensitive = true;
     /** @var array */
     protected $dict;
@@ -65,8 +83,8 @@ class MiniLang
     /**
      * MiniLang constructor.
      *
-     * @param object      $caller
-     * @param array       $dict
+     * @param object      $caller     Who is calling this language. It is used for callbacks.
+     * @param array       $dict       The dictionary with the values
      * @param array       $specialCom Special commands. it calls a function of the caller.
      * @param array       $areaName   It marks special areas that could be called as "<namearea> somevalue"
      * @param null|object $serviceObject
@@ -92,10 +110,13 @@ class MiniLang
         $this->set = [];
         $this->else = [];
         $this->init = [];
-        $this->whereTxt = [];
-        $this->setTxt = [];
-        $this->elseTxt = [];
-        $this->initTxt = [];
+        $this->loop = [];
+        $this->wherePHP = [];
+        $this->setPHP = [];
+        $this->elsePHP = [];
+        $this->initPHP = [];
+        $this->loopPHP = [];
+        $this->commentPHP = [];
         $this->errorLog = [];
 
     }
@@ -163,31 +184,31 @@ class MiniLang
     }
 
     /**
-     * It returns the value of a index of the dictionary
+     * It returns the value of an index of the dictionary<br>
+     * <b>Example</b><br>
+     * <pre>
+     * $this->getDictEntry('customer'); // returns the value of the variable or null
+     * $this->getDictEntry('customer.name'); // returns the value of the variable or null
+     * $this->getDictEntry('customer.name.subname'); // returns the value of the variable (the limit is 3 sublevels)
+     * </pre>
      *
      * @param string $name name of the index of the dictionary
      *
-     * @return mixed
+     * @return mixed It returns null if not found
      */
     public function getDictEntry($name)
     {
-        return isset($this->dict[$name]) ? $this->dict[$name] : null;
+        if (strpos($name, '.') === false) {
+            return isset($this->dict[$name]) ? $this->dict[$name] : null;
+        }
+        $arr = explode('.', $name, 3);
+        if (count($arr) === 2) {
+            return isset($this->dict[$arr[0]]) ? $this->dict[$arr[0]][$arr[1]] : null;
+        }
+        return isset($this->dict[$arr[0]]) ? $this->dict[$arr[0]][$arr[1]][$arr[2]] : null;
+
     }
 
-    /**
-     * It creates a command using a previously separate set
-     *
-     * @param array $where
-     * @param array $set
-     * @param array $init
-     */
-    public function create($where = [], $set = [], $init = [])
-    {
-        $this->langCounter = max(@count($where), @count($set), @count($init)) - 1;
-        $this->where = $where;
-        $this->set = $set;
-        $this->init = $init;
-    }
 
     /**
      * This function decomposed an array or object into their subelements.<br>
@@ -232,10 +253,18 @@ class MiniLang
     {
         $this->txtCounter = ($numLine < 0) ? $this->txtCounter + 1 : $numLine;
         $this->separate($miniScript);
-        $this->whereTxt[$this->txtCounter] = $this->compileTokens('where', $this->txtCounter);
-        $this->setTxt[$this->txtCounter] = $this->compileTokens('set', $this->txtCounter);
-        $this->initTxt[$this->txtCounter] = $this->compileTokens('init', $this->txtCounter);
-        $this->elseTxt[$this->txtCounter] = $this->compileTokens('else', $this->txtCounter);
+        $this->wherePHP[$this->txtCounter] = $this->compileTokens('where', $this->txtCounter);
+        $this->setPHP[$this->txtCounter] = $this->compileTokens('set', $this->txtCounter);
+        $this->initPHP[$this->txtCounter] = $this->compileTokens('init', $this->txtCounter);
+        $this->elsePHP[$this->txtCounter] = $this->compileTokens('else', $this->txtCounter);
+        $this->loopPHP[$this->txtCounter] = $this->compileTokens('loop', $this->txtCounter);
+        if (!$this->loopPHP[$this->txtCounter]) {
+            $this->loopPHP[$this->txtCounter] = 'null';
+        } else if ($this->loopPHP[$this->txtCounter][-1] === ',') {
+            $this->loopPHP[$this->txtCounter] = '[' . $this->loopPHP[$this->txtCounter] . 'null]';
+        } else {
+            $this->loopPHP[$this->txtCounter] = '[' . $this->loopPHP[$this->txtCounter] . ']';
+        }
     }
 
     /**
@@ -254,6 +283,7 @@ class MiniLang
         $this->set[$this->langCounter] = [];
         $this->else[$this->langCounter] = [];
         $this->init[$this->langCounter] = [];
+        $this->loop[$this->langCounter] = [];
         $rToken = token_get_all("<?php " . $miniScript);
         $rToken[] = ''; // avoid last operation
         $count = count($rToken) - 1;
@@ -317,6 +347,7 @@ class MiniLang
                         $first = true;
                         break;
                     case T_STRING:
+                    case T_BREAK:
                         if (in_array($v[1], $this->areaName, true)) {
                             // its an area. <area> <somvalue>
                             if (count($rToken) > $i + 2) {
@@ -347,6 +378,11 @@ class MiniLang
                                 case 'when':
                                     // adding a new when
                                     $position = 'where';
+                                    $first = true;
+                                    break;
+                                case 'loop':
+                                    //adding a new set
+                                    $position = 'loop';
                                     $first = true;
                                     break;
                                 case 'then':
@@ -442,6 +478,10 @@ class MiniLang
                     case T_LOGICAL_OR:
                         $this->addLogic($position, $first, 'or');
                         break;
+                    default:
+                        //var_dump(token_name($v[0]));
+                        //var_dump($v);
+                        break;
                 }
             } else {
                 switch ($v) {
@@ -451,6 +491,10 @@ class MiniLang
                                 || $rTokenNext[0] == T_DNUMBER)
                         ) {
                             // it's a negative value
+                            if ($position !== 'where') {
+                                // fixed for a-2 and a=a-2
+                                $first = false;
+                            }
                             $this->addBinOper($first, $position, $inFunction, 'number', -$rTokenNext[1]);
                             $i++;
                         } else {
@@ -515,12 +559,17 @@ class MiniLang
             $expr =& $this->{$posexpr}[$this->langCounter];
             $f = count($expr) - 1;
             $f2 = count($expr[$f]);
+            if ($type === 'number' && $name < 0 && $position !== 'where') {
+                $expr[$f][$f2] = '+';
+                $f2++;
+            }
             $expr[$f][$f2] = $type;
             $expr[$f][$f2 + 1] = $name;
             $expr[$f][$f2 + 2] = $ext;
             if ($position === 'where') {
                 $first = true;
             }
+
         }
     }
 
@@ -610,17 +659,17 @@ class MiniLang
             switch ($type) {
                 case 'pair':
                     if (count($item) <= 4) {
-                        $this->compileTokenField($item, $p, $code);
+                        $this->compileTokenField($item, $p, $code, $position);
                     } else {
                         while (true) {
-                            $this->compileTokenField($item, $p, $code);
+                            $this->compileTokenField($item, $p, $code, $position);
                             if (!isset($item[$p])) {
                                 break;
                             }
                             $this->compileTokenPairOp($position, $item, $p, $code);
                         }
                     }
-                    if ($position !== 'where') {
+                    if ($position !== 'where' && $position !== 'loop') {
                         $code[] = ";\n";
                     }
                     break;
@@ -649,20 +698,22 @@ class MiniLang
      * @param array    $arrayToken
      * @param int      $startPosition
      * @param string[] $code
+     * @param string   $position
      */
-    protected function compileTokenField($arrayToken, &$startPosition, &$code)
+    protected function compileTokenField($arrayToken, &$startPosition, &$code, $position)
     {
         $i1 = $arrayToken[$startPosition];
         $i2 = isset($arrayToken[$startPosition + 1]) ? $arrayToken[$startPosition + 1] : null;
         $i3 = isset($arrayToken[$startPosition + 1]) ? $arrayToken[$startPosition + 2] : null;
+
         switch ($i1) {
             case 'fn':
-                // fn(1),functioname(2),arguments(3 it could be array)
+                // fn(1),functioname(2),arguments(3 it could be an array)
                 if (is_array($i3)) {
                     $codeArg = [];
                     foreach ($i3 as $argToken) {
                         $pArg = 0;
-                        $this->compileTokenField($argToken, $pArg, $codeArg);
+                        $this->compileTokenField($argToken, $pArg, $codeArg, $position);
                     }
                     $argTxt = implode(',', $codeArg);
                     /** @see \eftec\minilang\MiniLang::callFunction */
@@ -682,7 +733,14 @@ class MiniLang
             case 'field':
                 // field(1),fieldname(2),prop(3)
                 if ($i3 === null) {
-                    $code[] = "\$this->dict['$i2']";
+                    if ($position === 'loop' && $startPosition === 1) {
+                        // for loop
+                        $code[] = "'$i2',";
+                    } else if ($i2 == 'break') {
+                        $code[] = "return 'break'";
+                    } else {
+                        $code[] = "\$this->dict['$i2']";
+                    }
                 } else {
                     switch ($i3) {
                         case '_first':
@@ -734,7 +792,7 @@ class MiniLang
                 break;
             case 'number':
                 // number(1).value(2).null(3)
-                if($i2===0 || $i2==='0') {
+                if ($i2 === 0 || $i2 === '0') {
                     // why? it is because field==null is equals than field==0
                     // however, field==null is not equals to field=='0'
                     $code[] = "'$i2'";
@@ -775,14 +833,18 @@ class MiniLang
         $i1 = $arrayToken[$startPosition];
         switch ($i1) {
             case '=':
-                $r = ($position === 'where') ? '==' : '=';
+
+                if (($position === 'where')) {
+                    $r = '==';
+                } else {
+                    $r = ($position === 'loop') ? '' : '=';
+                }
                 break;
             case '+':
-                $r = ($position === 'set' && $startPosition===4) ? '+=' : '+';
+                $r = ($position === 'set' && $startPosition === 4) ? '+=' : '+';
                 break;
             case '-':
-
-                $r = ($position === 'set' && $startPosition===4) ? '-=' : '-';
+                $r = ($position === 'set' && $startPosition === 4) ? '-=' : '-';
                 break;
             case '&':
                 $r = '.';
@@ -807,7 +869,7 @@ class MiniLang
      */
     public function evalLogic2($numLine = 0)
     {
-        $where = $this->whereTxt[$numLine];
+        $where = $this->wherePHP[$numLine];
         $where = "return ($where);";
         return eval($where);
     }
@@ -855,16 +917,17 @@ class MiniLang
         $code .= "*.\n";
         $code .= "* @package $namespace.\n";
         $code .= "* @generated by https://github.com/EFTEC/MiniLang.\n";
-        $code .= "* @version ".self::VERSION." ".date('c').".\n";
+        $code .= "* @version " . self::VERSION . " " . date('c') . ".\n";
         $code .= "*/\n";
         $code .= "class $className extends MiniLang {\n";
-        $code .= "\tpublic \$numCode=" . ($this->langCounter + 1) . "; // num of lines of code \n";
+        $code .= "\tpublic \$numCode=" . $this->langCounter . "; // num of lines of code \n";
         $code .= "\tpublic \$usingClass=true; // if true then we are using a class (this class) \n";
 
         $this->generateClassWhere($code);
+        $this->generateClassLoop($code);
         $this->generateClassSet($code);
-        $this->generateClassSet($code,'else');
-        $this->generateClassSet($code,'init');
+        $this->generateClassSet($code, 'else');
+        $this->generateClassSet($code, 'init');
 
         $code .= "} // end class\n";
         if ($filename) {
@@ -878,25 +941,26 @@ class MiniLang
         return $code;
     }
 
-    protected  function generateClassWhere(&$code) {
+    protected function generateClassWhere(&$code)
+    {
         $code .= "\tpublic function whereRun(\$lineCode=0) {\n";
         $code .= "\t\tswitch(\$lineCode) {\n";
         // group empties
-        $align="\t\t\t";
-        $empties=false;
+        $align = "\t\t\t";
+        $empties = false;
         for ($i = 0; $i <= $this->txtCounter; $i++) {
-            if (!$this->whereTxt[$i]) {
-                $empties=true;
-                $code .= $align."case $i:\n";
+            if (!$this->wherePHP[$i]) {
+                $empties = true;
+                $code .= $align . "case $i:\n";
             }
         }
-        if($empties) {
-            $code .= $align."\treturn true; // nothing to do\n";
+        if ($empties) {
+            $code .= $align . "\treturn true; // nothing to do\n";
         }
         for ($i = 0; $i <= $this->langCounter; $i++) {
-            if($this->whereTxt[$i]) {
+            if ($this->wherePHP[$i]) {
                 $code .= "\t\t\tcase $i:\n";
-                $code .= "\t\t\t\t\$result=" . $this->whereTxt[$i] . ";\n";
+                $code .= "\t\t\t\t\$result=" . $this->wherePHP[$i] . ";\n";
                 $code .= "\t\t\t\tbreak;\n";
             }
         }
@@ -907,143 +971,173 @@ class MiniLang
         $code .= "\t\treturn \$result;\n";
         $code .= "\t} // end function WhereRun\n";
     }
-    protected function generateClassSet(&$code,$type='set') {
+
+    protected function generateClassLoop(&$code)
+    {
+        $code .= "\tpublic function loopRun(\$lineCode=0) {\n";
+        $code .= "\t\tswitch(\$lineCode) {\n";
+        // group empties
+        $align = "\t\t\t";
+        $empties = false;
+        for ($i = 0; $i <= $this->txtCounter; $i++) {
+            if (!$this->loopPHP[$i]) {
+                $empties = true;
+                $code .= $align . "case $i:\n";
+            }
+        }
+        if ($empties) {
+            $code .= $align . "\treturn true; // nothing to do\n";
+        }
+        for ($i = 0; $i <= $this->langCounter; $i++) {
+            if ($this->loopPHP[$i]) {
+                $code .= "\t\t\tcase $i:\n";
+                $code .= "\t\t\t\t\$result=" . $this->loopPHP[$i] . ";\n";
+                $code .= "\t\t\t\tbreak;\n";
+            }
+        }
+        $code .= "\t\t\tdefault:\n";
+        $code .= "\t\t\t\t\$result=null;\n";
+        $code .= "\t\t\t\t\$this->throwError('Line '.\$lineCode.' is not defined');\n";
+        $code .= "\t\t}\n";
+        $code .= "\t\treturn \$result;\n";
+        $code .= "\t} // end function loopRun\n";
+    }
+
+    protected function generateClassSet(&$code, $type = 'set')
+    {
         // SetRun *****************
         $code .= "\tpublic function {$type}Run(\$lineCode=0) {\n";
+        $code .= "\t\t\$result=null;\n";
         $code .= "\t\tswitch(\$lineCode) {\n";
         $align = "\t\t\t";
         // group empties
-        $empties=false;
+        $empties = false;
         for ($i = 0; $i <= $this->txtCounter; $i++) {
-            switch($type) {
-                case 'set':
-                    $origin =  $this->setTxt[$i];
-                    break;
-                case 'else':
-                    $origin =  $this->elseTxt[$i];
-                    break;
-                case 'init':
-                    $origin =  $this->initTxt[$i];
-                    break;
-                default:
-                    $origin='';
-                    break;
+            if ($type !== '') {
+                $typename = $type . 'PHP';
+                $origin = $this->$typename[$i];
+            } else {
+                $origin = '';
             }
             if (!$origin) {
-                $empties=true;
-                $code .= $align."case $i:\n";
+                $empties = true;
+                $code .= $align . "case $i:\n";
             }
         }
-        if($empties) {
-            $code .= $align."\tbreak; // nothing to do\n";
+        if ($empties) {
+            $code .= $align . "\tbreak; // nothing to do\n";
         }
         for ($i = 0; $i <= $this->txtCounter; $i++) {
-            switch($type) {
-                case 'set':
-                    $origin =  $this->setTxt[$i];
-                    break;
-                case 'else':
-                    $origin =  $this->elseTxt[$i];
-                    break;
-                case 'init':
-                    $origin =  $this->initTxt[$i];
-                    break;
-                default:
-                    $origin = '';
-                    break;
+            if ($type !== '') {
+                $typename = $type . 'PHP';
+                $origin = $this->$typename[$i];
+            } else {
+                $origin = '';
             }
             if ($origin) {
-                $code .= $align."case $i:\n";
+                $code .= $align . "case $i:\n";
                 $txt = str_replace("\n", "\n" . $align . "\t", $origin);
-                $code .= $align."\t" . $txt;
+                $code .= $align . "\t" . $txt;
                 $code = rtrim($code) . "\n";
-                $code .= $align."\tbreak;\n";
+                $code .= $align . "\tbreak;\n";
             }
         }
         $code .= "\t\t\tdefault:\n";
         $code .= "\t\t\t\t\$this->throwError('Line '.\$lineCode.' is not defined for $type');\n";
         $code .= "\t\t}\n";
+        $code .= "\t\treturn \$result;\n";
         $code .= "\t} // end function {$type}Run\n";
     }
 
-    /**
-     * It evaluates all the expressions (using the second motor).<br>
-     * If the position "where" is true, then it processes the "set" position (if any)<br>
-     * If the position "where" is false, then it proccess the "else" position (if any)<br>
-     *
-     * @param bool $stopOnFound exit if some evaluation matches
-     * @param bool $start       if true then it evaluates the "init" expression.
-     */
-    public function evalAllLogic2($stopOnFound = true, $start = false)
-    {
-        $_foundIt = false;
-        for ($i = 0; $i <= $this->langCounter; $i++) {
-            eval($this->getCode2($i, $stopOnFound, $start));
-            if ($stopOnFound && $_foundIt) {
-                break;
-            }
-        }
-    }
 
-    /**
-     * It returns a php code based in the expression obtained by separate2()
-     *
-     * @param int  $line        number of line
-     * @param bool $stopOnFound if "when" is true, then it only executes a single command
-     * @param bool $start       if true then it includes the position "init"
-     * @param int  $tabs        Number of tabs (for the identation)
-     *
-     * @return string a php code.
-     * @noinspection PhpUnusedParameterInspection
-     */
-    public function getCode2($line = 0, $stopOnFound = false, $start = false, $tabs = 0)
-    {
-        $code = '';
-        $align = str_repeat("\t", $tabs);
-        if ($start && $this->initTxt[$line]) {
-            $code .= $align . $this->initTxt[$line] . "\n";
-        }
-        if ($this->whereTxt[$line]) {
-            $align2 = $align . "\t";
-            $code .= $align . 'if (' . $this->whereTxt[$line] . ") {\n";
-        } else {
-            $align2 = $align;
-        }
-        $code .= $align2 . "\$_foundIt=true;\n";
-        $code .= $align2 . str_replace("\n", "\n" . $align . "\t", $this->setTxt[$line]) . "\n";
-        if ($this->elseTxt[$line] && $this->whereTxt[$line]) {
-            $code .= $align . "} else {\n";
-            $code .= $align2 . str_replace("\n", "\n" . $align, $this->elseTxt[$line]) . "\n";
-        }
-        if ($this->whereTxt[$line]) {
-            $code .= $align . "}\n";
-        }
-        return $code;
-    }
+
+
 
     /**
      * It evaluates all the expressions.<br>
      * If the position "where" is true, then it processes the "set" position (if any)<br>
      * If the position "where" is false, then it proccess the "else" position (if any)<br>
      *
-     * @param bool $stopOnFound exit if some evaluation matches
-     * @param bool $start       if true then it evaluates the "init" expression.
+     * @param bool $stopOnFound If true then it exits if some evaluation returns true.<br>
+     *                          If false then it keeps evaluating all the operators<br>
+     * @param bool $start       if true then it evaluates the "init" expression if any.
      */
-    public function evalAllLogic($stopOnFound = true, $start = false)
+    public function evalAllLogic($stopOnFound = false, $start = false)
     {
         $upto = ($this->usingClass) ? $this->numCode : $this->langCounter;
-        for ($i = 0; $i <= $upto; $i++) {
-            $this->debugLine = $i;
-            if ($start) {
-                $this->evalSet($i, 'init');
+        $loopStatus = [];
+        $r = 0;
+        $loop0 = null;
+        $loop1 = null;
+        for ($iPosition = 0; $iPosition <= $upto; $iPosition++) {
+            $this->debugLine = $iPosition;
+            $loop = $this->evalSet($iPosition, 'loop');
+            if ($loop !== null) {
+                $loop0 = $loop[0];
+                $loop1 = $loop[1];
             }
-            if ($this->evalLogic($i)) {
-                $this->evalSet($i);
+            if ($loop !== null && $loop0 !== 'end') {
+                $keys = array_keys($loop1);
+                if (!isset($loopStatus[$loop0])) {
+                    // we create a loop
+                    if(count($keys)===0) {
+                        // the loop must be created, however it is empty
+                        for ($findiPos = $iPosition; $findiPos <= $upto; $findiPos++) {
+                            $loop = $this->evalSet($findiPos, 'loop');
+                            if ($loop !== null && $loop[0] == 'end') {
+                                // we jump out of the loop.
+                                $iPosition = $findiPos + 1;
+                                break;
+                            }
+                        }
+                        if($iPosition>$upto) {
+                            break; // for ($iPosition = 0; $iPosition <= $upto; $iPosition++) {
+                        }
+                    } else {
+                        $loopStatus[$loop0] = [$keys, 0, $iPosition];
+                        $this->dict[$loop0] = ['_key' => $keys[0], '_value' => $loop1[$keys[0]]];
+                    }
+                } else {
+                    // we increase the value of the loop
+                    $loopStatus[$loop0][1]++;
+                    $this->dict[$loop0] = ['_key' => $keys[$loopStatus[$loop0][1]], '_value' => $loop1[$keys[$loopStatus[$loop0][1]]]];
+                }
+            }
+            if ($start) {
+                $this->evalSet($iPosition, 'init');
+            }
+            if ($this->evalLogic($iPosition)) {
+                $break = $this->evalSet($iPosition);
+                if ($break === 'break') {
+                    for ($findiPos = $iPosition; $findiPos <= $upto; $findiPos++) {
+                        $loop = $this->evalSet($findiPos, 'loop');
+                        if ($loop !== null && $loop[0] == 'end') {
+                            // we jump out of the loop.
+                            $iPosition = $findiPos + 1;
+                            break;
+                        }
+                    }
+                }
                 if ($stopOnFound) {
                     break;
                 }
             } else {
-                $this->evalSet($i, 'else');
+                $this->evalSet($iPosition, 'else');
+            }
+            if ($loop !== null && $loop0 === 'end') {
+                $r++;
+                if ($r > 99999) {
+                    break;
+                }
+                $latestLoop = end($loopStatus);
+                if ($latestLoop[1] < count($latestLoop[0]) - 1) {
+                    // we loop
+                    $iPosition = $latestLoop[2] - 1;
+                } else {
+                    // we remove the last element
+                    array_pop($loopStatus);
+                }
+
             }
         }
     }
@@ -1054,21 +1148,22 @@ class MiniLang
      * @param int    $numLine  number of expression
      * @param string $position =['set','else','init'][$i]
      *
-     * @return void
+     * @return array|null
      */
     public function evalSet($numLine = 0, $position = 'set')
     {
         if ($this->usingClass) {
             if ($position === 'init') {
                 $this->initRun($numLine);
-                return;
+                return null;
             }
             if ($position === 'else') {
-                $this->elseRun($numLine);
-                return;
+                return $this->elseRun($numLine);
             }
-            $this->setRun($numLine);
-            return;
+            if ($position === 'loop') {
+                return $this->loopRun($numLine);
+            }
+            return $this->setRun($numLine);
         }
         $position = (!$position) ? 'init' : $position;
         $exp = $this->{$position}[$numLine];
@@ -1116,11 +1211,10 @@ class MiniLang
                 switch ($v[1]) {
                     case 'subvar':
                         // $a.field
-                        $rname = isset($GLOBALS[$name]) ? $GLOBALS[$name] : null;
-                        if (is_object($rname)) {
-                            $rname->{$ext} = $field1;
+                        if (is_object($GLOBALS[$name])) {
+                            $GLOBALS[$name]->{$ext} = $field1;
                         } else {
-                            $rname[$ext] = $field1;
+                            $GLOBALS[$name][$ext] = $field1;
                         }
                         break;
                     case 'var':
@@ -1148,6 +1242,9 @@ class MiniLang
                         switch ($op) {
                             case '=':
                                 $this->dict[$name] = $field1;
+                                if ($position === 'loop') {
+                                    return [$name, $field1];
+                                }
                                 break;
                             case '+';
                                 /** @noinspection AdditionOperationOnArraysInspection */
@@ -1155,6 +1252,12 @@ class MiniLang
                                 break;
                             case '-';
                                 $this->dict[$name] -= $field1;
+                                break;
+                            case null:
+                                // variable alone
+                                if ($position === 'loop') {
+                                    return [$name, $field1];
+                                }
                                 break;
                         }
                         break;
@@ -1181,6 +1284,7 @@ class MiniLang
                 }
             }
         } // for
+        return null;
     }
 
     public function initRun($lineCode)
@@ -1191,15 +1295,23 @@ class MiniLang
     public function elseRun($lineCode)
     {
         $this->throwError('elseRun() not defined yet, you must override this method');
+        return null;
+    }
+
+    public function loopRun($lineCode)
+    {
+        $this->throwError('loopRun() not defined yet, you must override this method');
+        return null;
     }
 
     public function setRun($lineCode)
     {
         $this->throwError('setRun() not defined yet, you must override this method');
+        return null;
     }
 
     /**
-     * It obtains a value.
+     * It obtains a value, including a variable, number, string, etc.
      *
      * @param string            $type =['subvar','var','number','string','stringp','field','subfield','fn','special'][$i]
      * @param string            $name name of the value. It is also used for the value of the variable.
@@ -1320,7 +1432,7 @@ class MiniLang
                 // the first argument is an object
                 if (method_exists($args[0], $nameFunction)) {
                     $cp = $args;
-                    unset($cp[0]); // it avoids to pass the name of the function as argument
+                    unset($cp[0]); // it avoids passing the name of the function as argument
                     return $args[0]->{$nameFunction}(...$cp); //(...$cp);
                 }
 
@@ -1385,6 +1497,15 @@ class MiniLang
                 return 0;
             case 'undef':
                 return -1;
+            case 'str_contains':
+            case 'contains':
+                return $this->contains($args[0], $args[1]);
+            case 'endswith':
+            case 'str_ends_with':
+                return $this->endsWith($args[0], $args[1]);
+            case 'startwith':
+            case 'str_starts_with':
+                return $this->startWith($args[0], $args[1]);
             case 'flip':
                 return (isset($args[0]) && $args[0]) ? 0 : 1;
             case 'now':
@@ -1417,6 +1538,22 @@ class MiniLang
         }
 
         return false;
+    }
+
+    public function contains($haystack, $needle)
+    {
+        return strpos($haystack, $needle) !== false;
+    }
+
+    public function endsWith($haystack, $needle)
+    {
+        $length = strlen($needle);
+        return !($length > 0) || substr($haystack, -$length) === $needle;
+    }
+
+    public function startWith($haystack, $needle)
+    {
+        return strpos($haystack, $needle) === 0;
     }
 
     /**
@@ -1534,9 +1671,6 @@ class MiniLang
                     case '>=':
                         $r = ($field0 >= $field1);
                         break;
-                    case 'contain':
-                        $r = (strpos($field0, $field1) !== false);
-                        break;
                     default:
                         $error = "comparison $v[4] not defined for eval logic.";
                         $this->throwError($error);
@@ -1561,6 +1695,7 @@ class MiniLang
         } // for
         return $r;
     }
+
 
     public function whereRun($lineCode)
     {

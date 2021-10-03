@@ -1,9 +1,11 @@
 # MiniLang
+This library is used to store business logic in a simple and yet powerful definition.
+
 A mini script language for PHP.  It does three simple tasks.
 
 1. (optional) It set some initial values **(INIT)**.
 2. It evaluates a logic expression **(WHERE)**.
-3. If the expression (logic) is true then it executes the SET expression **(SET)**.
+3. If the expression (logic) is true then it executes the SET expression **(SET)**, so we could change the value of a variable, call a function and task like that.
 4. (optional) If the expression (logic) is false then it executes the ELSE expression **(INIT)**.
 
 For example :
@@ -265,7 +267,7 @@ $mini=new MiniLang(null,
 ```php
 vararray.associndex // vararray['associindex'] ('hi')
 vararray.4 // vararray[4] 'last'
-vararray.123 // it will throw an error.
+vararray.123 // it will throw an error (out of index)
 vararray.param('a.b.c')) // vararray['a']['b']['c'] ('nested')
 param(vararray,'a.b.c')) // vararray['a']['b']['c'] ('nested')
 vararray._first // first element ('hi')
@@ -375,6 +377,11 @@ var_dump($field1); // returns 3
 | timer()         | returns the current timestamp (integer)                                      |
 | interval()      | returns the interval (in seconds) between the last change and now. It uses the field dateLastChange or method dateLastChange() of the callback class            |
 | fullinterval()  | returns the interval (in seconds) between the start of the process and now. It uses the field dateInit or method dateInit() of the callback class |
+| contains()/str_contains() | returns true if the text is contained in another text |
+| str_starts_with(), startwith() | returns true if the text starts with another text |
+| str_ends_with(),endwith() | returns true if the text ends with another text. |
+
+
 
 
 Example: [examples/examplereserved.php](examples/examplereserved.php)  
@@ -456,13 +463,12 @@ It's possible to compare more than a condition at the same time by separating by
 
 ### Logical expressions allowed
 
-* **equals:**  = and ==
+* **equals:**  = and ==  (the symbol "=" and "==" acts similarly.)
 * **not equals:** <> and !=
 * **less than:** <
 * **less or equal than:** <=
 * **greater than:** >
 * **greater or equal than:** >=
-* **contain a text:** contain
 * **and logic:** "and" and &&
 * **or logic:** "or" and ||
 
@@ -490,12 +496,12 @@ We could set a variable using the next expressions:
 * variable=20 
 * variable=anothervariable
 * variable=20+30
-* variable=20-30 // !!!! **it will not work correctly because it will consider the -30 as a negative number "-30" and not "20 minus 30"**
-* variable=20+-30 // however, it work work as expected 
+* variable=20-30  // it will work
+* variable=20+-30 // !!!! **it will not work correctly because it will consider the -30 as a negative number "-30" and not "20 minus 30"**
 * variable=40*50+30
 * variable+30 // it increases the variable by 30
 * variable+=anothervariable // it will increase the variable by the value of anothervariable
-* variable+-30 // it decreases the variable by -30  Note: **variable-30 will not work because the symbol - is not an operator but it indicates a negative value**
+* variable-30 // it decreases the variable by -30  Note: **+variable-30 will not work because the symbol - is an operation so +-20 is a double operator**
 * variable=flip() // it flips the value 0->1 or 1->0
 
 This library does not allow complex instruction such as
@@ -521,6 +527,47 @@ This optional part of the expression allows setting the value of a variable.  It
 ### Example
 
 > else variable1=20 and $variable2=variable3 and function(20)=40
+
+## Loop
+
+It is possible to create a loop using the space "loop"
+
+To start a loop, you must write 
+
+```php
+$this->separate('loop variableloop=variable_with_values');
+// where variable_with_values is must contains an array of values
+// variableloop._key will contain the key of the loop
+// variableloop._value will contain the value of the loop    
+```
+
+And to end the loop, you must use
+
+```php
+$this->separate('loop end');
+```
+
+You can escape the loop using the operator "break" in the "set" or "else".
+
+```php
+$this->separate('when condition set break else break');
+```
+
+> Note: Loops are only evaluated when you evaluate all the logic.  It does not work with evalLogic() and evalLogic2()
+>
+> Note: You can't add a condition to a loop, however you can skip a loop assigning an empty array
+
+Example:
+
+```php
+$this->separate('loop $row=variable');
+	$this->separate('loop $row2=variable');
+		$this->separate('where op=2 then cc=2');
+		$this->separate('where op=3 then break'); // ends of the first loop
+	$this->separate('loop end');
+$this->separate('loop end')     
+$obj->evalAllLogic();        
+```
 
 
 
@@ -550,7 +597,7 @@ With the class generated, you can use this new class instead of **MiniLang**. Si
 ```php
 $result=['var1'=>'hello'];
 $obj=new ExampleBasicClass(null,$result); 
-$obj->evalAllLogic();
+$obj->evalAllLogic(true);
 ```
 
 The class will look like:
@@ -593,7 +640,7 @@ We call the some operations 1000 times.
 #### evalAllLogic x 1000
 
 * We call the method reset() and separate() 1 time
-* And we call the method evalAllLogic() 1000 times.
+* And we call the method evalAllLogic(true) 1000 times.
 * Speed: 0.002387 seconds. Comparison: 3.84% (smaller is better)
 
 #### (reset+separate2+evalAllLogic2) x 1000
@@ -624,6 +671,11 @@ We call the some operations 1000 times.
 
 ## Version
 
+* 2.21   2021-10-03
+   * Now a=b-1 works however a=b+-2 will not work anymore
+   * Added loops
+   * Fixed a bug when set $var.field=20. Now it sets the value correctly
+   * Removed alternate motor because it is never used.
 * 2.20.2 2021-09-26
    * Fixed the generation of the class when the number is negative.
 * 2.20.1 2021-09-26
@@ -655,7 +707,7 @@ We call the some operations 1000 times.
   * New method **separate2()** and evalAllLogic2() it works with PHP's eval.
   * New method generateClass2()
   * separate2() and evalAllLogic2() works by parsing the tokens and converting in native PHP code.
-  * However it is from x2 to x5 slower than evalAllLogic().
+  * However it is from x2 to x5 slower than evalAllLogic(true).
   * This new motor could work by caching the evaluation in fields $setTxt,$whereTxt,$elseTxt,$initTxt
   * See benchmark 
 * 2.11 2019-10-11 method _param (class).  Also, $a.fn() is allowed.

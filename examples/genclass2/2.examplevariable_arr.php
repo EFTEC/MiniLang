@@ -30,7 +30,7 @@ $mini=new ExampleBasicClass2($callback,$variables,[],[],new ClassService());
 echo "<pre>";
 var_dump($variables);
 echo "</pre>";
-$mini->evalAllLogic();
+$mini->evalAllLogic(true);
 
 echo "<pre>";
 var_dump($variables);

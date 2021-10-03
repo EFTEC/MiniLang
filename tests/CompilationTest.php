@@ -77,7 +77,7 @@ class CompilationTest extends AbstractMiniLang
     public function testArea()
     {
         $this->mini->areaName = ['AREA1', 'AREA2'];
-        $this->mini->separate("when field1=1 then field2=30*3, field3=30+-3, field4=30/2 AREA1 field5=20");
+        $this->mini->separate("when field1=1 then field2=30*3, field3=30-3, field4=30/2 AREA1 field5=20");
         $caller = new DummyClass();
         $caller->values = ['field1' => 1, 'field2' => -1, 'field3' => 0, 'field4' => 0, 'field5' => 0];
         $this->mini->setCaller($caller);
@@ -90,10 +90,99 @@ class CompilationTest extends AbstractMiniLang
     }
     public function testClass2() {
         $this->mini->reset();
-        $this->mini->separate2("when field1=1 and field1=2 then field2=30*3");
-        $this->mini->separate2("when field1=1 then field2.fn2=20 else field2.fn3=30");
-        $a1=$this->mini->generateClass('Class2',true,true);
-        var_dump($a1);
+        $this->mini->separate2("loop key=loopvalues");
+        $this->mini->separate2("when key._key='k4' then break");
+        $this->mini->separate2("when field1=1 then counter1=counter1+1");
+        $this->mini->separate2("when field2=1 then counter1='fail' else counter2=counter2-1");
+        $this->mini->separate2('loop end');
+        $a1=$this->mini->generateClass('GenerateClass',null,__DIR__.'/GenerateClass.php');
+        $this->assertNotNull($a1);
+        include __DIR__.'/GenerateClass.php';
+        $dic=['field1'=>1,'field2'=>2,'counter1'=>0,'counter2'=>0,'loopvalues'=>['k1'=>'v1','k2'=>'v2','k3'=>'v3','k4'=>'v4','k5'=>'v5']];
+        $gen=new \GenerateClass(null,$dic);
+        $gen->evalAllLogic(false);
+        $this->assertEquals(3,$gen->getDictEntry('counter1'));
+        $this->assertEquals(-3,$gen->getDictEntry('counter2'));
+        $this->assertEquals('k4',$gen->getDictEntry('key._key'));
+        $this->assertEquals(['_key'=>'k4','_value'=>'v4'],$gen->getDictEntry('key'));
+    }
+    public function testloopempty() {
+        $this->mini->reset();
+        $this->mini->separate2("loop key=loopvalues");
+        $this->mini->separate2("when key._key='k4' then break");
+        $this->mini->separate2("when field1=1 then counter1=counter1+1");
+        $this->mini->separate2("when field2=1 then counter1='fail' else counter2=counter2-1");
+        $this->mini->separate2('loop end');
+        $a1=$this->mini->generateClass('GenerateClass2',null,__DIR__.'/GenerateClass2.php');
+        $this->assertNotNull($a1);
+        include __DIR__.'/GenerateClass2.php';
+        $dic=['field1'=>1,'field2'=>2,'counter1'=>0,'counter2'=>0,'loopvalues'=>[]];
+        $gen=new \GenerateClass2(null,$dic);
+        $gen->evalAllLogic(false);
+        $this->assertEquals(0,$gen->getDictEntry('counter1'));
+        $this->assertEquals(0,$gen->getDictEntry('counter2'));
+        $this->assertEquals(null,$gen->getDictEntry('key._key'));
+        $this->assertEquals(null,$gen->getDictEntry('key'));
+    }
+    public function testnegative() {
+        $this->mini->reset();
+        $this->mini->separate2('when a=-1 then b=b-1');
+        $dic=['a'=>-1,'b'=>'1'];
+        $this->mini->setDict($dic);
+        $this->mini->evalAllLogic();
+        $this->assertEquals("\$this->dict['b']=\$this->dict['b']+-1;\n"
+            ,$this->mini->setPHP[0]);
+        $this->assertEquals("\$this->dict['a']==-1"
+            ,$this->mini->wherePHP[0]);
+    }
+    public function testExtra2() {
+        $this->mini->reset();
+        $this->mini->separate('when a=-1 then b=b-1');
+        $r=MiniLang::unserialize($this->mini->serialize(),null);
+        $this->assertEquals($this->mini->set[0],$r->set[0]);
+        $this->assertEquals($this->mini->where[0],$r->where[0]);
+    }
+
+    public function testnegative2() {
+        $this->mini->reset();
+        $this->mini->separate('when a=-1 then b=b-1');
+        $dic=['a'=>-1,'b'=>'1'];
+        $this->mini->setDict($dic);
+        $this->mini->evalAllLogic();
+        $this->assertEquals([0=>[0=>['pair','field','b',null,'=','field','b',null,'+','number',-1,null]]]
+            ,$this->mini->set);
+        $this->assertEquals([0=>[0=>['pair','field','a',null,'=','number',-1,null]]]
+            ,$this->mini->where);
+        $this->assertEquals(0,$this->mini->getDictEntry('b'));
+    }
+    public function testSeparate4() {
+        global $field3,$field4;
+        $field3=['alpha'=>'???'];
+        $this->mini->reset();
+        $this->mini->separate2("when field1>1 or field1<2 or field1<>1 or str_contains(field1,'hi') 
+            then field2=30*3");
+        $this->mini->separate2("when field1>=1 or field1<=2 or field1<>1 or str_contains(field1,'hi') 
+            then field2=30*3");
+        $this->mini->separate2("when field1<>555 then field2='*{{field1}}*' and \$field4=2 and \$field3.alpha=20");
+        $dic=['field1'=>1];
+        $this->mini->setDict($dic);
+        $this->mini->evalAllLogic();
+        $this->assertEquals("\$this->dict['field1']>1 || \$this->dict['field1']<2 ||".
+            " \$this->dict['field1']!=1 ||".
+            " \$this->callFunction('str_contains',[\$this->dict['field1'],'hi'])"
+            ,$this->mini->wherePHP[0]);
+        $this->assertEquals("\$this->dict['field1']>=1 || \$this->dict['field1']<=2 ||".
+            " \$this->dict['field1']!=1 ||".
+            " \$this->callFunction('str_contains',[\$this->dict['field1'],'hi'])"
+            ,$this->mini->wherePHP[1]);
+        $this->assertEquals("\$this->dict['field1']!=555"
+            ,$this->mini->wherePHP[2]);
+        $this->assertEquals("\$this->dict['field2']=\$this->getValueP('*{{field1}}*');\n".
+            "\$GLOBALS['field4']=2;\n".
+            "\$GLOBALS['field3']['alpha']=20;\n",$this->mini->setPHP[2]);
+        $this->assertEquals(['alpha'=>20],$field3);
+        $this->assertEquals(2,$field4);
+        $this->assertEquals('*1*',$this->mini->getDictEntry('field2'));
     }
     public function testSeparate2()
     {
@@ -122,7 +211,7 @@ class CompilationTest extends AbstractMiniLang
         $this->mini->separate2("when field1=1 then field4='it is a value {{field1}},{{field2}}' ");
 
         $txts=[];
-        foreach($this->mini->setTxt as $t) {
+        foreach($this->mini->setPHP as $t) {
             $txts[]=str_replace("\n",'\n',$t);
         }
 
@@ -137,7 +226,7 @@ class CompilationTest extends AbstractMiniLang
             '1==1',
             '1==1',
             '$this->dict[\'field1\']==1'
-        ], $this->mini->whereTxt);
+        ], $this->mini->wherePHP);
         self::assertEquals([
             '$this->dict[\'field2\']=30*3;\n',
             '$this->dict[\'field2\'][\'fn2\']=20;\n',
@@ -155,7 +244,7 @@ class CompilationTest extends AbstractMiniLang
     public function test1Extra()
     {
 
-        $this->mini->separate("when field1=1 then field2=30*3, field3=30+-3, field4=30/2 ");
+        $this->mini->separate("when field1=1 then field2=30*3, field3=30-3, field4=30/2 ");
         $caller = new DummyClass();
         $caller->values = ['field1' => 1, 'field2' => -1, 'field3' => 0, 'field4' => 0, 'field5' => 0];
         $this->mini->setCaller($caller);

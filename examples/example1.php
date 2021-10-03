@@ -50,5 +50,5 @@ if ($mini->evalLogic()) {
 //var_dump($caller->values['field2']);
 
 
-$mini->evalAllLogic();
+$mini->evalAllLogic(true);
 var_dump($caller->values);

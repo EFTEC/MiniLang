@@ -43,7 +43,7 @@ $t0=microtime(true);
 for($i=0;$i<1000;$i++) {
     $mini->reset();
     $mini->separate($expr);
-    $mini->evalAllLogic();
+    $mini->evalAllLogic(true);
     //var_dump($mini->getDictEntry('field3'));
 }
 $t1=microtime(true);
@@ -55,7 +55,7 @@ $mini->reset();
 $mini->separate($expr);
 
 for($i=0;$i<1000;$i++) {
-    $mini->evalAllLogic();
+    $mini->evalAllLogic(true);
     //var_dump($mini->getDictEntry('field3'));
 }
 $t1=microtime(true);

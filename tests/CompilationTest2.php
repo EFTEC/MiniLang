@@ -267,7 +267,7 @@ class CompilationTest extends AbstractMiniLang
             '$this->dict[\'field4\']+=1+2;'."\n".
             '$this->dict[\'field5\']+=1+2;'."\n".
             '\count($this->dict[\'field6\'])>1;'."\n"
-        ], $this->mini->setTxt);
+        ], $this->mini->setPHP);
     }
     public function test3rest()
     {
@@ -276,13 +276,13 @@ class CompilationTest extends AbstractMiniLang
         $caller->values = ['field1' => 1, 'field2' => 12345, 'field3' => 3, 'field4' => 4,'field6'=>[1,2]];
 
         $this->mini = new MiniLang($caller, $caller->values);
-        $this->mini->separate2("then field4+-1+-2 and field5+-1+-2 and field6._count>1 "); // only the first "+" is converted to +=
-
+        $this->mini->separate2("then field4-1-2 and field5-1-2 and field6._count>1 "); // only the first "+" is converted to +=
+        //$this->mini->separate2("then field4-1");
         self::assertEquals([
             '$this->dict[\'field4\']+=-1+-2;'."\n".
             '$this->dict[\'field5\']+=-1+-2;'."\n".
             '\count($this->dict[\'field6\'])>1;'."\n"
-        ], $this->mini->setTxt);
+        ], $this->mini->setPHP);
     }
     public function test3()
     {
