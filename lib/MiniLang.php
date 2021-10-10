@@ -560,8 +560,12 @@ class MiniLang
             $f = count($expr) - 1;
             $f2 = count($expr[$f]);
             if ($type === 'number' && $name < 0 && $position !== 'where') {
-                $expr[$f][$f2] = '+';
-                $f2++;
+                if($f2 - 1 <= 0 || $expr[$f][$f2 - 1] !== '=') {
+                    // value=something-1  => value=something+-1
+                    // we exclude value=-1
+                    $expr[$f][$f2] = '+';
+                    $f2++;
+                }
             }
             $expr[$f][$f2] = $type;
             $expr[$f][$f2 + 1] = $name;
@@ -989,6 +993,7 @@ class MiniLang
             $code .= $align . "\treturn true; // nothing to do\n";
         }
         for ($i = 0; $i <= $this->langCounter; $i++) {
+
             if ($this->loopPHP[$i]) {
                 $code .= "\t\t\tcase $i:\n";
                 $code .= "\t\t\t\t\$result=" . $this->loopPHP[$i] . ";\n";

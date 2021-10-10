@@ -675,7 +675,7 @@ We call the some operations 1000 times.
    * Now a=b-1 works however a=b+-2 will not work anymore
    * Added loops
    * Fixed a bug when set $var.field=20. Now it sets the value correctly
-   * Removed alternate motor because it is never used.
+   * Removed evalAllLogic2() because it is never used. Use instead evalAllLogic()
 * 2.20.2 2021-09-26
    * Fixed the generation of the class when the number is negative.
 * 2.20.1 2021-09-26

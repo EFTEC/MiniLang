@@ -135,6 +135,17 @@ class CompilationTest extends AbstractMiniLang
         $this->assertEquals("\$this->dict['a']==-1"
             ,$this->mini->wherePHP[0]);
     }
+    public function testnegative2() {
+        $this->mini->reset();
+        $this->mini->separate2('when a=-1 then b=-1');
+        $dic=['a'=>-1,'b'=>'1'];
+        $this->mini->setDict($dic);
+        $this->mini->evalAllLogic();
+        $this->assertEquals("\$this->dict['b']=-1;\n"
+            ,$this->mini->setPHP[0]);
+        $this->assertEquals("\$this->dict['a']==-1"
+            ,$this->mini->wherePHP[0]);
+    }
     public function testExtra2() {
         $this->mini->reset();
         $this->mini->separate('when a=-1 then b=b-1');
@@ -143,7 +154,7 @@ class CompilationTest extends AbstractMiniLang
         $this->assertEquals($this->mini->where[0],$r->where[0]);
     }
 
-    public function testnegative2() {
+    public function testnegative3() {
         $this->mini->reset();
         $this->mini->separate('when a=-1 then b=b-1');
         $dic=['a'=>-1,'b'=>'1'];
