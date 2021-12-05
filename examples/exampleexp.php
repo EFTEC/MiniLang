@@ -2,6 +2,10 @@
 
 use eftec\minilang\MiniLang;
 
+$p = new ReflectionParameter('str_replace', 1);
+var_dump($p);
+die(1);
+
 include "../lib/MiniLang.php";
 
 class DummyClassExample {
@@ -21,7 +25,14 @@ $mini=new MiniLang($caller,$caller->values);
 $n=2;
 $arr=[10,20,30,40,'a'=>666];
 
-$mini->separate2('when a=1-3');
+$mini->when()
+    ->compare('a','=','b')
+    ->and()
+    ->compare('a','=',['123','+','a'])
+    ->then()
+    ->set('a','=',20)
+    ->end();
+
 echo "<pre>";
 var_dump($mini);
 echo "</pre>";

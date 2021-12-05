@@ -670,7 +670,9 @@ We call the some operations 1000 times.
 * Documentation.
 
 ## Version
-
+* 2.22   2021-12-05
+   * [fix] Added some validations and some small corrections when the value is incorrect.
+   * Now, every valued set is a clone and not an instance of an object (runtime)
 * 2.21   2021-10-03
    * Now a=b-1 works however a=b+-2 will not work anymore
    * Added loops
@@ -707,7 +709,7 @@ We call the some operations 1000 times.
   * New method **separate2()** and evalAllLogic2() it works with PHP's eval.
   * New method generateClass2()
   * separate2() and evalAllLogic2() works by parsing the tokens and converting in native PHP code.
-  * However it is from x2 to x5 slower than evalAllLogic(true).
+  * However, it is from x2 to x5 slower than evalAllLogic(true).
   * This new motor could work by caching the evaluation in fields $setTxt,$whereTxt,$elseTxt,$initTxt
   * See benchmark 
 * 2.11 2019-10-11 method _param (class).  Also, $a.fn() is allowed.

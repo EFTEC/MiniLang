@@ -55,6 +55,7 @@ class MiniLang
     public $throwError = true;
     public $errorLog = [];
     public $numCode = -1;
+    private $stack;
     /**
      * @var bool <b>If true</b>: then this class is extended by another class that includes the definition of the
      *      tasks<br>
@@ -76,7 +77,7 @@ class MiniLang
     protected $specialCom;
     /** @var object for callbacks */
     protected $caller;
-    protected $debugLine = 0;
+    public $debugLine = 0;
     protected $txtCounter = 0;
     protected $langCounter = 0;
 
@@ -241,7 +242,7 @@ class MiniLang
 
     /**
      * It sends an expression to the MiniLang, and it is decomposed in its parts.<br>
-     * The script is not executed but parsed. You can obtain the result with $this->whereTxt,$this->setTxt, etc.<br>
+     * The script is not executed but parsed. You can obtain the result with $this->wherePHP,$this->setPHP, etc.<br>
      *
      * @param string $miniScript Example: "when $field1>0 then $field1=3 and field2=20"
      * @param int    $numLine    If -1 (default value), then it adds a new separate (automatic number of line).
@@ -615,6 +616,11 @@ class MiniLang
         }
     }
 
+    public function when() {
+        $this->stack=new MinLangExp($this);
+        return $this->stack;
+    }
+
     /**
      * It adds a logic to the array of the position.
      *
@@ -889,7 +895,7 @@ class MiniLang
      */
     public function evalSet2($numLine = 0, $position = 'set')
     {
-        $position .= 'Txt';
+        $position .= 'PHP';
         $set = $this->{$position}[$numLine];
         return eval($set);
     }
@@ -1075,18 +1081,46 @@ class MiniLang
         $loop0 = null;
         $loop1 = null;
         for ($iPosition = 0; $iPosition <= $upto; $iPosition++) {
-            $this->debugLine = $iPosition;
-            $loop = $this->evalSet($iPosition, 'loop');
-            if ($loop !== null) {
-                $loop0 = $loop[0];
-                $loop1 = $loop[1];
-            }
-            if ($loop !== null && $loop0 !== 'end') {
-                $keys = array_keys($loop1);
-                if (!isset($loopStatus[$loop0])) {
-                    // we create a loop
-                    if(count($keys)===0) {
-                        // the loop must be created, however it is empty
+            try {
+                $this->debugLine = $iPosition;
+                $loop = $this->evalSet($iPosition, 'loop');
+                if ($loop !== null) {
+                    $loop0 = $loop[0];
+                    $loop1 = $loop[1];
+                }
+                if ($loop !== null && $loop0 !== 'end') {
+                    $keys = array_keys($loop1);
+                    if (!isset($loopStatus[$loop0])) {
+                        // we create a loop
+                        if (count($keys) === 0) {
+                            // the loop must be created, however it is empty
+                            for ($findiPos = $iPosition; $findiPos <= $upto; $findiPos++) {
+                                $loop = $this->evalSet($findiPos, 'loop');
+                                if ($loop !== null && $loop[0] == 'end') {
+                                    // we jump out of the loop.
+                                    $iPosition = $findiPos + 1;
+                                    break;
+                                }
+                            }
+                            if ($iPosition > $upto) {
+                                break; // for ($iPosition = 0; $iPosition <= $upto; $iPosition++) {
+                            }
+                        } else {
+                            $loopStatus[$loop0] = [$keys, 0, $iPosition];
+                            $this->dict[$loop0] = ['_key' => $keys[0], '_value' => $loop1[$keys[0]]];
+                        }
+                    } else {
+                        // we increase the value of the loop
+                        $loopStatus[$loop0][1]++;
+                        $this->dict[$loop0] = ['_key' => $keys[$loopStatus[$loop0][1]], '_value' => $loop1[$keys[$loopStatus[$loop0][1]]]];
+                    }
+                }
+                if ($start) {
+                    $this->evalSet($iPosition, 'init');
+                }
+                if ($this->evalLogic($iPosition)) {
+                    $break = $this->evalSet($iPosition);
+                    if ($break === 'break') {
                         for ($findiPos = $iPosition; $findiPos <= $upto; $findiPos++) {
                             $loop = $this->evalSet($findiPos, 'loop');
                             if ($loop !== null && $loop[0] == 'end') {
@@ -1095,54 +1129,30 @@ class MiniLang
                                 break;
                             }
                         }
-                        if($iPosition>$upto) {
-                            break; // for ($iPosition = 0; $iPosition <= $upto; $iPosition++) {
-                        }
+                    }
+                    if ($stopOnFound) {
+                        break;
+                    }
+                } else {
+                    $this->evalSet($iPosition, 'else');
+                }
+                if ($loop !== null && $loop0 === 'end') {
+                    $r++;
+                    if ($r > 99999) {
+                        break;
+                    }
+                    $latestLoop = end($loopStatus);
+                    if ($latestLoop[1] < count($latestLoop[0]) - 1) {
+                        // we loop
+                        $iPosition = $latestLoop[2] - 1;
                     } else {
-                        $loopStatus[$loop0] = [$keys, 0, $iPosition];
-                        $this->dict[$loop0] = ['_key' => $keys[0], '_value' => $loop1[$keys[0]]];
+                        // we remove the last element
+                        array_pop($loopStatus);
                     }
-                } else {
-                    // we increase the value of the loop
-                    $loopStatus[$loop0][1]++;
-                    $this->dict[$loop0] = ['_key' => $keys[$loopStatus[$loop0][1]], '_value' => $loop1[$keys[$loopStatus[$loop0][1]]]];
-                }
-            }
-            if ($start) {
-                $this->evalSet($iPosition, 'init');
-            }
-            if ($this->evalLogic($iPosition)) {
-                $break = $this->evalSet($iPosition);
-                if ($break === 'break') {
-                    for ($findiPos = $iPosition; $findiPos <= $upto; $findiPos++) {
-                        $loop = $this->evalSet($findiPos, 'loop');
-                        if ($loop !== null && $loop[0] == 'end') {
-                            // we jump out of the loop.
-                            $iPosition = $findiPos + 1;
-                            break;
-                        }
-                    }
-                }
-                if ($stopOnFound) {
-                    break;
-                }
-            } else {
-                $this->evalSet($iPosition, 'else');
-            }
-            if ($loop !== null && $loop0 === 'end') {
-                $r++;
-                if ($r > 99999) {
-                    break;
-                }
-                $latestLoop = end($loopStatus);
-                if ($latestLoop[1] < count($latestLoop[0]) - 1) {
-                    // we loop
-                    $iPosition = $latestLoop[2] - 1;
-                } else {
-                    // we remove the last element
-                    array_pop($loopStatus);
-                }
 
+                }
+            } catch(Exception $ex) {
+                throw new RuntimeException('Error in Minilang '.$ex->getMessage().' on line ['.$iPosition.']');
             }
         }
     }
@@ -1246,7 +1256,7 @@ class MiniLang
                     case 'field':
                         switch ($op) {
                             case '=':
-                                $this->dict[$name] = $field1;
+                                $this->dict[$name] = (is_object($field1)) ? clone $field1 : $field1;
                                 if ($position === 'loop') {
                                     return [$name, $field1];
                                 }
@@ -1574,7 +1584,6 @@ class MiniLang
     {
         if (count($args) >= 1) {
             if (is_object($args[0])) {
-
                 // the call is the form nameFunction(somevar)=1 or somevar.nameFunction()=1
                 if (isset($args[0]->{$nameFunction})) {
                     // someobject.field (nameFunction acts as a field name
@@ -1598,12 +1607,10 @@ class MiniLang
         }
         if (is_object($this->caller)) {
             if (method_exists($this->caller, $nameFunction)) {
-                $args[] = $setValue; // it adds a second parameter
+                $args[] = (is_object($setValue))?clone $setValue : $setValue; // it adds a second parameter
                 call_user_func_array(array($this->caller, $nameFunction), $args);
                 return;
-
             }
-
             if (isset($this->caller->{$nameFunction})) {
                 $this->caller->{$nameFunction} = $setValue;
                 return;

@@ -19,6 +19,22 @@ class MinLangExp
         $this->parent->addOp('where',$f,$comparison);
         $this->parent->addBinOper($f,'where',false,'string',$value1);
     }
+    public function compare($value1,$comparison,$value2) {
+        return $this;
+    }
+    public function and() {
+        return $this;
+    }
+    public function set($value1,$comparison,$value2) {
+        return $this;
+    }
+    public function then() {
+        return $this;
+    }
+    public function end() {
+        return $this;
+    }
+
 
 
 }

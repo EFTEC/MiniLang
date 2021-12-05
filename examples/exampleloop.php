@@ -13,6 +13,9 @@ class SomeClass {
 
 $callback=new SomeClass();
 
+$mini->when('variable','=','20')->and('variable2','>',20)->set('variable3','=',50);
+
+
 
 $mini=new MiniLang($callback,$variables);
 $mini->separate("loop fruit=fruits");

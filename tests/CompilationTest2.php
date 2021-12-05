@@ -341,7 +341,7 @@ class CompilationTest extends AbstractMiniLang
         $this->mini->separate2('when countries.us="mexico" then countries.ca="mexico"'); // if us is mexico then ca is mexico too
         $this->mini->setCaller($caller);
         $this->mini->setDict($caller->values);
-        $this->mini->evalAllLogic2(false);
+        $this->mini->evalAllLogic(false);
         self::assertEquals('usa', $caller->values['field2']);
         self::assertEquals(200, $caller->values['field3']); 
         self::assertEquals('usa', $caller->values['field4']);
