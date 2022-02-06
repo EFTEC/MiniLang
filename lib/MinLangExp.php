@@ -1,7 +1,9 @@
 <?php
 
 namespace eftec\minilang;
-
+/**
+ * Use future.
+ */
 class MinLangExp
 {
     /** @var MiniLang */

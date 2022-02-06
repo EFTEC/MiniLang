@@ -98,13 +98,14 @@ class CompilationTest extends AbstractMiniLang
         $a1=$this->mini->generateClass('GenerateClass',null,__DIR__.'/GenerateClass.php');
         $this->assertNotNull($a1);
         include __DIR__.'/GenerateClass.php';
-        $dic=['field1'=>1,'field2'=>2,'counter1'=>0,'counter2'=>0,'loopvalues'=>['k1'=>'v1','k2'=>'v2','k3'=>'v3','k4'=>'v4','k5'=>'v5']];
+        $dic=['field1'=>1,'field2'=>2,'counter1'=>0,'counter2'=>0
+            ,'loopvalues'=>['k1'=>'v1','k2'=>'v2','k3'=>'v3','k4'=>'v4','k5'=>'v5']];
         $gen=new \GenerateClass(null,$dic);
         $gen->evalAllLogic(false);
-        $this->assertEquals(3,$gen->getDictEntry('counter1'));
-        $this->assertEquals(-3,$gen->getDictEntry('counter2'));
-        $this->assertEquals('k4',$gen->getDictEntry('key._key'));
-        $this->assertEquals(['_key'=>'k4','_value'=>'v4'],$gen->getDictEntry('key'));
+        $this->assertEquals(5,$gen->getDictEntry('counter1'));
+        $this->assertEquals(-5,$gen->getDictEntry('counter2'));
+        $this->assertEquals('k5',$gen->getDictEntry('key._key'));
+        $this->assertEquals(['_key'=>'k5','_value'=>'v5'],$gen->getDictEntry('key'));
     }
     public function testloopempty() {
         $this->mini->reset();

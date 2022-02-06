@@ -1,4 +1,6 @@
-<?php /** @noinspection UnknownInspectionInspection */
+<?php /** @noinspection ReturnTypeCanBeDeclaredInspection */
+/** @noinspection PhpMissingParamTypeInspection */
+/** @noinspection UnknownInspectionInspection */
 /** @noinspection PhpUnused */
 /** @noinspection NotOptimalIfConditionsInspection */
 /** @noinspection TypeUnsafeArraySearchInspection */
@@ -24,7 +26,7 @@ use RuntimeException;
  */
 class MiniLang
 {
-    const VERSION = '2.21';
+    public const VERSION = '2.21';
     /** @var array When operators (if any) */
     public $where = [];
     /** @var array Set operators (if any) */
@@ -55,7 +57,7 @@ class MiniLang
     public $throwError = true;
     public $errorLog = [];
     public $numCode = -1;
-    private $stack;
+    //private $stack;
     /**
      * @var bool <b>If true</b>: then this class is extended by another class that includes the definition of the
      *      tasks<br>
@@ -103,7 +105,7 @@ class MiniLang
     /**
      * It reset the previous definitions but the variables, service and areas
      */
-    public function reset()
+    public function reset(): void
     {
         $this->langCounter = -1;
         $this->txtCounter = -1;
@@ -131,7 +133,7 @@ class MiniLang
      * @param string $variableName
      * @return string=['upper','lower','first','normal][$i]
      */
-    public static function getCase($variableName)
+    public static function getCase($variableName): string
     {
         if ($variableName === strtoupper($variableName)) {
             return 'upper';
@@ -155,9 +157,10 @@ class MiniLang
      *
      * @return MiniLang
      */
-    public static function unserialize($serializeText, $caller, $serviceClass = null)
+    public static function unserialize($serializeText, $caller, $serviceClass = null): MiniLang
     {
         /** @var MiniLang $obj */
+        /** @noinspection UnserializeExploitsInspection */
         $obj = unserialize($serializeText);
         $obj->caller = $caller;
         $obj->serviceClass = $serviceClass;
@@ -169,7 +172,7 @@ class MiniLang
      *
      * @param object $caller
      */
-    public function setCaller($caller)
+    public function setCaller($caller): void
     {
         $this->caller = $caller;
     }
@@ -179,7 +182,7 @@ class MiniLang
      *
      * @param array $dict This value is passes as reference so it returns the modified values.
      */
-    public function setDict(&$dict)
+    public function setDict(&$dict): void
     {
         $this->dict = &$dict;
     }
@@ -200,7 +203,7 @@ class MiniLang
     public function getDictEntry($name)
     {
         if (strpos($name, '.') === false) {
-            return isset($this->dict[$name]) ? $this->dict[$name] : null;
+            return $this->dict[$name] ?? null;
         }
         $arr = explode('.', $name, 3);
         if (count($arr) === 2) {
@@ -250,7 +253,7 @@ class MiniLang
      *
      * @see \eftec\minilang\MiniLang::serialize To pre-calculate this result and improve the performance.
      */
-    public function separate2($miniScript, $numLine = -1)
+    public function separate2($miniScript, $numLine = -1): void
     {
         $this->txtCounter = ($numLine < 0) ? $this->txtCounter + 1 : $numLine;
         $this->separate($miniScript);
@@ -277,7 +280,7 @@ class MiniLang
      *
      * @see \eftec\minilang\MiniLang::serialize To pre-calculate this result and improve the performance.
      */
-    public function separate($miniScript, $numLine = -1)
+    public function separate($miniScript, $numLine = -1): void
     {
         $this->langCounter = ($numLine < 0) ? $this->langCounter + 1 : $numLine;
         $this->where[$this->langCounter] = [];
@@ -479,12 +482,20 @@ class MiniLang
                     case T_LOGICAL_OR:
                         $this->addLogic($position, $first, 'or');
                         break;
+                    case 287: // T_AMPERSAND_NOT_FOLLOWED_BY_VAR_OR_VARARG:
+                        //var_dump('amp');
+                        $this->addOp($position, $first, '&');
+                        break;
                     default:
+                        //var_dump($v[0]);
                         //var_dump(token_name($v[0]));
                         //var_dump($v);
                         break;
                 }
+                //var_dump(token_name($v[0]));
+                //var_dump($v);
             } else {
+                //var_dump("simple:".$v);
                 switch ($v) {
                     case '-':
                         if (is_array($rTokenNext)
@@ -547,7 +558,7 @@ class MiniLang
      * @param string      $name       name of the field
      * @param null|string $ext        extra parameter.
      */
-    public function addBinOper(&$first, $position, $inFunction, $type, $name, $ext = null)
+    public function addBinOper(&$first, $position, $inFunction, $type, $name, $ext = null): void
     {
         if ($inFunction) {
             $this->addParam($position, $type, $name, $ext);
@@ -586,7 +597,7 @@ class MiniLang
      * @param string      $name     name of the field
      * @param null|string $ext      extra parameter.
      */
-    public function addParam($position, $type, $name, $ext = null)
+    public function addParam($position, $type, $name, $ext = null): void
     {
         $position = (!$position) ? 'init' : $position;
         $numLine = count($this->{$position}[$this->langCounter]) - 1;
@@ -604,7 +615,7 @@ class MiniLang
      * @param bool   $first    If it's true then it is the first value of a binary
      * @param string $opName
      */
-    public function addOp($position, &$first, $opName)
+    public function addOp($position, &$first, $opName): void
     {
         $position = (!$position) ? 'init' : $position;
         $f = count($this->{$position}[$this->langCounter]) - 1;
@@ -615,11 +626,13 @@ class MiniLang
             $this->{$position}[$this->langCounter][$f][] = $opName;
         }
     }
-
-    public function when() {
+    /*
+    public function when(): MinLangExp
+    {
         $this->stack=new MinLangExp($this);
         return $this->stack;
     }
+    */
 
     /**
      * It adds a logic to the array of the position.
@@ -628,7 +641,7 @@ class MiniLang
      * @param bool   $first    If it's true then it is the first value of a binary
      * @param string $name     name of the logic
      */
-    protected function addLogic($position, $first, $name)
+    protected function addLogic($position, $first, $name): void
     {
         if ($first) {
             $position = (!$position) ? 'init' : $position;
@@ -640,7 +653,7 @@ class MiniLang
 
     }
 
-    protected function throwError($msg)
+    protected function throwError($msg): void
     {
         $this->errorLog[] = $msg . ' Line:' . $this->debugLine;
         if ($this->throwError) {
@@ -656,7 +669,7 @@ class MiniLang
      *
      * @return string
      */
-    public function compileTokens($position, $numLine = 0)
+    public function compileTokens($position, $numLine = 0): string
     {
         $code = [];
         foreach ($this->{$position}[$numLine] as $item) {
@@ -710,10 +723,11 @@ class MiniLang
      * @param string[] $code
      * @param string   $position
      */
-    protected function compileTokenField($arrayToken, &$startPosition, &$code, $position)
+    protected function compileTokenField($arrayToken, &$startPosition, &$code, $position): void
     {
         $i1 = $arrayToken[$startPosition];
-        $i2 = isset($arrayToken[$startPosition + 1]) ? $arrayToken[$startPosition + 1] : null;
+        $i2 = $arrayToken[$startPosition + 1] ?? null;
+        //todo: revisar linea siguiente:
         $i3 = isset($arrayToken[$startPosition + 1]) ? $arrayToken[$startPosition + 2] : null;
 
         switch ($i1) {
@@ -838,7 +852,7 @@ class MiniLang
      * @param int      $startPosition
      * @param string[] $code
      */
-    protected function compileTokenPairOp($position, $arrayToken, &$startPosition, &$code)
+    protected function compileTokenPairOp($position, $arrayToken, &$startPosition, &$code): void
     {
         $i1 = $arrayToken[$startPosition];
         switch ($i1) {
@@ -891,7 +905,7 @@ class MiniLang
      * @param int    $numLine  number of expression
      * @param string $position =['set','else','init'][$i]
      *
-     * @return void
+     * @return mixed
      */
     public function evalSet2($numLine = 0, $position = 'set')
     {
@@ -951,9 +965,9 @@ class MiniLang
         return $code;
     }
 
-    protected function generateClassWhere(&$code)
+    protected function generateClassWhere(&$code): void
     {
-        $code .= "\tpublic function whereRun(\$lineCode=0) {\n";
+        $code .= "\tpublic function whereRun(\$lineCode=0):bool {\n";
         $code .= "\t\tswitch(\$lineCode) {\n";
         // group empties
         $align = "\t\t\t";
@@ -982,9 +996,9 @@ class MiniLang
         $code .= "\t} // end function WhereRun\n";
     }
 
-    protected function generateClassLoop(&$code)
+    protected function generateClassLoop(&$code): void
     {
-        $code .= "\tpublic function loopRun(\$lineCode=0) {\n";
+        $code .= "\tpublic function loopRun(\$lineCode=0):?array {\n";
         $code .= "\t\tswitch(\$lineCode) {\n";
         // group empties
         $align = "\t\t\t";
@@ -1014,7 +1028,7 @@ class MiniLang
         $code .= "\t} // end function loopRun\n";
     }
 
-    protected function generateClassSet(&$code, $type = 'set')
+    protected function generateClassSet(&$code, $type = 'set'): void
     {
         // SetRun *****************
         $code .= "\tpublic function {$type}Run(\$lineCode=0) {\n";
@@ -1073,7 +1087,7 @@ class MiniLang
      *                          If false then it keeps evaluating all the operators<br>
      * @param bool $start       if true then it evaluates the "init" expression if any.
      */
-    public function evalAllLogic($stopOnFound = false, $start = false)
+    public function evalAllLogic($stopOnFound = false, $start = false): void
     {
         $upto = ($this->usingClass) ? $this->numCode : $this->langCounter;
         $loopStatus = [];
@@ -1163,7 +1177,7 @@ class MiniLang
      * @param int    $numLine  number of expression
      * @param string $position =['set','else','init'][$i]
      *
-     * @return array|null
+     * @return mixed
      */
     public function evalSet($numLine = 0, $position = 'set')
     {
@@ -1173,7 +1187,8 @@ class MiniLang
                 return null;
             }
             if ($position === 'else') {
-                return $this->elseRun($numLine);
+                $this->elseRun($numLine);
+                return null;
             }
             if ($position === 'loop') {
                 return $this->loopRun($numLine);
@@ -1186,7 +1201,7 @@ class MiniLang
             if ($v[0] === 'pair') {
                 $name = $v[2];
                 $ext = $v[3];
-                $op = isset($v[4]) ? $v[4] : null;
+                $op = $v[4] ?? null;
                 //$field0=$this->getValue($v[1],$v[2],$v[3],$this->caller,$dictionary);
                 if (count($v) > 5) {
                     $field1 = $this->getValue($v[5], $v[6], $v[7]);
@@ -1302,15 +1317,16 @@ class MiniLang
         return null;
     }
 
+    /** @noinspection ReturnTypeCanBeDeclaredInspection */
     public function initRun($lineCode)
     {
         $this->throwError('initRun() not defined yet, you must override this method');
     }
 
+    /** @noinspection ReturnTypeCanBeDeclaredInspection */
     public function elseRun($lineCode)
     {
         $this->throwError('elseRun() not defined yet, you must override this method');
-        return null;
     }
 
     public function loopRun($lineCode)
@@ -1319,6 +1335,11 @@ class MiniLang
         return null;
     }
 
+    /**
+     * @param $lineCode
+     * @return mixed
+     * @noinspection PhpReturnDocTypeMismatchInspection
+     */
     public function setRun($lineCode)
     {
         $this->throwError('setRun() not defined yet, you must override this method');
@@ -1349,17 +1370,17 @@ class MiniLang
         switch ($type) {
             case 'subvar':
                 // $a.field
-                $rname = isset($GLOBALS[$name]) ? $GLOBALS[$name] : null;
+                $rname = $GLOBALS[$name] ?? null;
                 if ($ext[0] === '$') {
                     // $a.$b
                     $subext = substr($ext, 1);
-                    $ext = isset($GLOBALS[$subext]) ? $GLOBALS[$subext] : null;
+                    $ext = $GLOBALS[$subext] ?? null;
                 }
                 $r = (is_object($rname)) ? $rname->{$ext} : $rname[$ext];
                 break;
             case 'var':
                 // $a
-                $r = isset($GLOBALS[$namel]) ? $GLOBALS[$namel] : null;
+                $r = $GLOBALS[$namel] ?? null;
                 break;
             case 'number':
                 // 20
@@ -1384,7 +1405,7 @@ class MiniLang
                 break;
             case 'subfield':
                 // field.sum is equals to sum(field)
-                $args = [isset($this->dict[$namel]) ? $this->dict[$namel] : null];
+                $args = [$this->dict[$namel] ?? null];
                 $r = $this->callFunction($ext, $args);
                 break;
             case 'fn':
@@ -1418,11 +1439,11 @@ class MiniLang
         return preg_replace_callback('/{{\s?(\w+)\s?}}/u', function ($matches) {
             if (is_array($matches)) {
                 $item = substr($matches[0], 2, -2); // removes {{ and }}
-                return isset($this->dict[$item]) ? $this->dict[$item] : null;
+                return $this->dict[$item] ?? null;
             }
 
             $item = substr($matches, 2, -2); // removes {{ and }}
-            return isset($this->dict[$item]) ? $this->dict[$item] : null;
+            return $this->dict[$item] ?? null;
         }, $string);
     }
 
@@ -1555,18 +1576,18 @@ class MiniLang
         return false;
     }
 
-    public function contains($haystack, $needle)
+    public function contains($haystack, $needle): bool
     {
         return strpos($haystack, $needle) !== false;
     }
 
-    public function endsWith($haystack, $needle)
+    public function endsWith($haystack, $needle): bool
     {
         $length = strlen($needle);
         return !($length > 0) || substr($haystack, -$length) === $needle;
     }
 
-    public function startWith($haystack, $needle)
+    public function startWith($haystack, $needle): bool
     {
         return strpos($haystack, $needle) === 0;
     }
@@ -1580,7 +1601,7 @@ class MiniLang
      *
      * @return void
      */
-    protected function callFunctionSet($nameFunction, &$args, $setValue)
+    protected function callFunctionSet($nameFunction, &$args, $setValue): void
     {
         if (count($args) >= 1) {
             if (is_object($args[0])) {
@@ -1709,7 +1730,7 @@ class MiniLang
     }
 
 
-    public function whereRun($lineCode)
+    public function whereRun($lineCode) : bool
     {
         $this->throwError('whereRun() not defined yet, you must override this method');
         return false;
@@ -1725,7 +1746,7 @@ class MiniLang
      *
      * @see \eftec\minilang\MiniLang::separate
      */
-    public function serialize()
+    public function serialize(): string
     {
         $tmpCaller = $this->caller;
         $tmpService = $this->serviceClass;
@@ -1737,7 +1758,7 @@ class MiniLang
         return $result;
     }
 
-    public function runOne($idCode = 0, $init = false)
+    public function runOne($idCode = 0, $init = false): bool
     {
         if ($init) {
             $this->InitRun($idCode);

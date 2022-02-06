@@ -20,11 +20,11 @@ when var1>$abc then var3=var5 // $abc is a PHP variable.
 [![Build Status](https://travis-ci.org/EFTEC/MiniLang.svg?branch=master)](https://travis-ci.org/EFTEC/MiniLang)
 [![Packagist](https://img.shields.io/packagist/v/eftec/minilang.svg)](https://packagist.org/packages/eftec/minilang)
 [![Total Downloads](https://poser.pugx.org/eftec/minilang/downloads)](https://packagist.org/packages/eftec/minilang)
-[![Maintenance](https://img.shields.io/maintenance/yes/2021.svg)]()
+[![Maintenance](https://img.shields.io/maintenance/yes/2022.svg)]()
 [![composer](https://img.shields.io/badge/composer-%3E1.8-blue.svg)]()
-[![php](https://img.shields.io/badge/php->5.6-green.svg)]()
-[![php](https://img.shields.io/badge/php-7.x-green.svg)]()
-[![php](https://img.shields.io/badge/php-8.x-green.svg)]()
+[![php](https://img.shields.io/badge/php->7.2-green.svg)]()
+[![php](https://img.shields.io/badge/php-8.0-green.svg)]()
+[![php](https://img.shields.io/badge/php-8.1-green.svg)]()
 [![CocoaPods](https://img.shields.io/badge/docs-70%25-yellow.svg)]()
 
 ## Why we need a mini script?
@@ -670,6 +670,9 @@ We call the some operations 1000 times.
 * Documentation.
 
 ## Version
+* 2.23   2022-02-06
+  * [fix] update for php 8.1
+  * [change] update dependency for php 7.2.5 and higher.
 * 2.22   2021-12-05
    * [fix] Added some validations and some small corrections when the value is incorrect.
    * Now, every valued set is a clone and not an instance of an object (runtime)
