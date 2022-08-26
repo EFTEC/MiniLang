@@ -14,13 +14,13 @@ use RuntimeException;
  *
  * @package  eftec\minilang
  * @author   Jorge Patricio Castro Castillo <jcastro arroba eftec dot cl>
- * @version  2.22 2022-08-26
+ * @version  2.24 2022-08-26
  * @link     https://github.com/EFTEC/MiniLang
  * @license  LGPL v3 (or commercial if it's licensed)
  */
 class MiniLang
 {
-    public const VERSION = '2.22';
+    public const VERSION = '2.24';
     /** @var array When operators (if any) */
     public $where = [];
     /** @var array Set operators (if any) */

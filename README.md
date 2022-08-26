@@ -51,7 +51,7 @@ $script='if($condition) {
 eval($script);
 ```
 
-This solution works (and it only executes if we call the command eval). But it is verbose, prone to error and it's dangerous.
+This solution works (and it only executes if we call the command eval). But it is verbose, prone to error, and it's dangerous.
 
 Our library does the same but safe and clean.
 
@@ -670,6 +670,9 @@ We call the some operations 1000 times.
 * Documentation.
 
 ## Version
+* 2.24   2022-08-26
+  * clean the code.
+  * [fix] $this->caller could be a null
 * 2.23   2022-02-06
   * [fix] update for php 8.1
   * [change] update dependency for php 7.2.5 and higher.
