@@ -1,12 +1,6 @@
-<?php /** @noinspection ReturnTypeCanBeDeclaredInspection */
-/** @noinspection PhpMissingParamTypeInspection */
-/** @noinspection UnknownInspectionInspection */
+<?php /** @noinspection MultiAssignmentUsageInspection */
 /** @noinspection PhpUnused */
-/** @noinspection NotOptimalIfConditionsInspection */
 /** @noinspection TypeUnsafeArraySearchInspection */
-/** @noinspection MultiAssignmentUsageInspection */
-/** @noinspection PhpRedundantVariableDocTypeInspection */
-
 /** @noinspection TypeUnsafeComparisonInspection */
 
 namespace eftec\minilang;
@@ -20,13 +14,13 @@ use RuntimeException;
  *
  * @package  eftec\minilang
  * @author   Jorge Patricio Castro Castillo <jcastro arroba eftec dot cl>
- * @version  2.21 2021-10-03
+ * @version  2.22 2022-08-26
  * @link     https://github.com/EFTEC/MiniLang
  * @license  LGPL v3 (or commercial if it's licensed)
  */
 class MiniLang
 {
-    public const VERSION = '2.21';
+    public const VERSION = '2.22';
     /** @var array When operators (if any) */
     public $where = [];
     /** @var array Set operators (if any) */
@@ -77,7 +71,7 @@ class MiniLang
     protected $dict;
     // for runtime:
     protected $specialCom;
-    /** @var object for callbacks */
+    /** @var object|null for callbacks */
     protected $caller;
     public $debugLine = 0;
     protected $txtCounter = 0;
@@ -170,7 +164,7 @@ class MiniLang
     /**
      * It sets the object caller.
      *
-     * @param object $caller
+     * @param object|null $caller
      */
     public function setCaller($caller): void
     {
@@ -180,7 +174,7 @@ class MiniLang
     /**
      * It sets the whole dictionary.
      *
-     * @param array $dict This value is passes as reference so it returns the modified values.
+     * @param array $dict This value is passes as reference, so it returns the modified values.
      */
     public function setDict(&$dict): void
     {
@@ -293,7 +287,9 @@ class MiniLang
         $count = count($rToken) - 1;
         $first = true;
         $inFunction = false;
-        /** @var  string $position =['where','set','else','init'][$i] */
+        /** @var string $position =['where','set','else','init'][$i]
+         * @noinspection PhpRedundantVariableDocTypeInspection
+         */
         $position = 'init';
         for ($i = 0; $i < $count; $i++) {
             $v = $rToken[$i];
@@ -845,7 +841,7 @@ class MiniLang
     }
 
     /**
-     * It compile a token (the union between the "pair" token)
+     * It compiles a token (the union between the "pair" token)
      *
      * @param string   $position =['where','set','else','init'][$i]
      * @param array    $arrayToken
@@ -915,7 +911,7 @@ class MiniLang
     }
 
     /**
-     * It generates a PHP class, and it could be evaluated (eval command) or it could be store so it could be
+     * It generates a PHP class, and it could be evaluated (eval command) or it could be store, so it could be
      * called.<br>
      * $mini->separate2($expr);
      * echo $mini->generateClass2(); // it returns a php class (code)
@@ -1214,7 +1210,7 @@ class MiniLang
                         case '+': // if we add numbers then it adds, otherwise it concatenates.
                             $field2 = $this->getValue($v[$i + 1], $v[$i + 2], $v[$i + 3]);
                             if (is_numeric($field1) && is_numeric($field2)) {
-                                /** @noinspection AdditionOperationOnArraysInspection */
+
                                 $field1 += $this->getValue($v[$i + 1], $v[$i + 2], $v[$i + 3]);
                             } else {
                                 $field1 .= $this->getValue($v[$i + 1], $v[$i + 2], $v[$i + 3]);
@@ -1254,7 +1250,7 @@ class MiniLang
                                 $GLOBALS[$name] = $field1;
                                 break;
                             case '+';
-                                /** @noinspection AdditionOperationOnArraysInspection */
+
                                 $GLOBALS[$name] += $field1;
                                 break;
                             case '-';
@@ -1277,7 +1273,7 @@ class MiniLang
                                 }
                                 break;
                             case '+';
-                                /** @noinspection AdditionOperationOnArraysInspection */
+
                                 $this->dict[$name] += $field1;
                                 break;
                             case '-';
@@ -1329,6 +1325,11 @@ class MiniLang
         $this->throwError('elseRun() not defined yet, you must override this method');
     }
 
+    /**
+     * @param $lineCode
+     * @return mixed
+     * @noinspection PhpReturnDocTypeMismatchInspection
+     */
     public function loopRun($lineCode)
     {
         $this->throwError('loopRun() not defined yet, you must override this method');
@@ -1739,7 +1740,7 @@ class MiniLang
     /**
      * It serializes the current minilang. It doesn't serialize the caller or service class.<br>
      * This method could be used to speed up the process, especially the function separate()<br>
-     * separate() parse the text and it converts into an array. We could pre-calculate
+     * separate() parse the text, and it converts into an array. We could pre-calculate
      * the result to improve the performance.
      *
      * @return string The current object serialized
