@@ -247,7 +247,7 @@ var_dump($variables);
 
 * field2.value references the field "value" (MyModel)
 * field3.processcaller references the method ClassCaller::processcaller()
-* processcaller(field3) does the same than field3.processcaller
+* processcaller(field3) does the same as field3.processcaller
 * processservice(field3) calls the method ClassService::processservice()
 
 ### Variables defined by a PHP array
@@ -312,7 +312,7 @@ var_dump($variables);
 
 * field2.value references the element "value" of the array
 * field3.processcaller references the method ClassCaller::processcaller()
-* processcaller(field3) does the same than field3.processcaller
+* processcaller(field3) does the same as field3.processcaller
 * processservice(field3) calls the method ClassService::processservice()
 
 
@@ -348,12 +348,12 @@ var_dump($field1); // returns 3
 
 ## Literals
 
-| Type | Example |
-|------|---------|
-|Number|20|
-|string|"hello world", 'hello world'|
-|stringp|"my name is {{var}}"|
-|function|namefunction(arg,arg)|
+| Type     | Example                      |
+|----------|------------------------------|
+| Number   | 20                           |
+| string   | "hello world", 'hello world' |
+| stringp  | "my name is {{var}}"         |
+| function | namefunction(arg,arg)        |
 
 ### Examples
 
@@ -363,23 +363,23 @@ var_dump($field1); // returns 3
 
 ### Reserved methods
 
-| Reserved word | Explanation                                                                  |
-|---------------|------------------------------------------------------------------------------|
-| null()          | null value                                                                   |
-| false()         | false value                                                                  |
-| true()          | true value                                                                   |
-| on()            | 1                                                                            |
-| param(var,'l1.l2.l3')            | Separates an array (var) into var['l1']['l2']['l3']         |
-| off()           | 0                                                                            |
-| undef()         | -1 (for undefined)                                                           |
-| flip()          | (special value). It inverts a value ON<->OFF<br>Used as value=flip()                                 |
-| now()          | returns the current timestamp (integer)                                      |
-| timer()         | returns the current timestamp (integer)                                      |
-| interval()      | returns the interval (in seconds) between the last change and now. It uses the field dateLastChange or method dateLastChange() of the callback class            |
-| fullinterval()  | returns the interval (in seconds) between the start of the process and now. It uses the field dateInit or method dateInit() of the callback class |
-| contains()/str_contains() | returns true if the text is contained in another text |
-| str_starts_with(), startwith() | returns true if the text starts with another text |
-| str_ends_with(),endwith() | returns true if the text ends with another text. |
+| Reserved word                  | Explanation                                                                                                                                          |
+|--------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+| null()                         | null value                                                                                                                                           |
+| false()                        | false value                                                                                                                                          |
+| true()                         | true value                                                                                                                                           |
+| on()                           | 1                                                                                                                                                    |
+| param(var,'l1.l2.l3')          | Separates an array (var) into var['l1']['l2']['l3']                                                                                                  |
+| off()                          | 0                                                                                                                                                    |
+| undef()                        | -1 (for undefined)                                                                                                                                   |
+| flip()                         | (special value). It inverts a value ON<->OFF<br>Used as value=flip()                                                                                 |
+| now()                          | returns the current timestamp (integer)                                                                                                              |
+| timer()                        | returns the current timestamp (integer)                                                                                                              |
+| interval()                     | returns the interval (in seconds) between the last change and now. It uses the field dateLastChange or method dateLastChange() of the callback class |
+| fullinterval()                 | returns the interval (in seconds) between the start of the process and now. It uses the field dateInit or method dateInit() of the callback class    |
+| contains()/str_contains()      | returns true if the text is contained in another text                                                                                                |
+| str_starts_with(), startwith() | returns true if the text starts with another text                                                                                                    |
+| str_ends_with(),endwith()      | returns true if the text ends with another text.                                                                                                     |
 
 
 
@@ -577,7 +577,9 @@ It is possible to create a class with the logic created in the language.  The go
 
 ### Creating the class
 
-To generate the class, first we need to write the logic using the method **separate2()** instead of **separate()**.  It will store the logic inside an array of the instance of the class. You could use the code directly or you could save inside a class as follow:
+To generate the class, first we need to write the logic using the method **separate2()** instead of **separate()**.
+It will store the logic inside an array of the instance of the class. You could use the code directly, or you could
+save inside a class as follows:
 
 ```php
 // create an instance of MiniLang
@@ -630,7 +632,7 @@ Where each method evaluates a part of the expression.
 
 [examples/examplebenchmark.php](examples/examplebenchmark.php)
 
-We call the some operations 1000 times.
+We call some operations 1000 times.
 
 #### (reset+separate+evalAllLogic) x 1000
 
@@ -670,6 +672,8 @@ We call the some operations 1000 times.
 * Documentation.
 
 ## Version
+* 2.25   2022-09-03
+  * type hinting/validation for most methods. 
 * 2.24   2022-08-26
   * clean the code.
   * [fix] $this->caller could be a null
@@ -721,7 +725,7 @@ We call the some operations 1000 times.
 * 2.11 2019-10-11 method _param (class).  Also, $a.fn() is allowed.
 * 2.10 2019-10-07 method create()
 * 2.9 2019-08-28
-* * set field.value=20 , where field is an array works.  However field.1=20 does not work (the parser considers .1 as a decimal)
+* * set field.value=20 , where field is an array works.  However, field.1=20 does not work (the parser considers .1 as a decimal)
 * 2.8 2019-08-26
 * *  if a field (inside where section) is an object. then it is possible to call the method as field.method(arg)
 * *  Method getDictEntry() 
