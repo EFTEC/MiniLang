@@ -14,13 +14,13 @@ use RuntimeException;
  *
  * @package  eftec\minilang
  * @author   Jorge Patricio Castro Castillo <jcastro arroba eftec dot cl>
- * @version  2.25 2022-09-03
+ * @version  2.26 2022-09-11
  * @link     https://github.com/EFTEC/MiniLang
  * @license  LGPL v3 (or commercial if it's licensed)
  */
 class MiniLang
 {
-    public const VERSION = '2.25';
+    public const VERSION = '2.26';
     /** @var array When operators (if any) */
     public $where = [];
     /** @var array Set operators (if any) */
@@ -67,7 +67,7 @@ class MiniLang
      *           in 'field1')<br>
      */
     public $caseSensitive = true;
-    /** @var array */
+    /** @var array It is an associative array where the values will be stored */
     protected $dict;
     // for runtime:
     protected $specialCom;
@@ -172,7 +172,13 @@ class MiniLang
     }
 
     /**
-     * It sets the whole dictionary.
+     * It sets the whole dictionary of values.
+     * <b>Example</b>:<br>
+     * <pre>
+     * $this->setDict(['surname'=>'doe','age'=>33]); // you can set all values at once
+     * $this->setDictEntry('name','john'); // or you can set only one variable
+     * $this->evalAllLogic();
+     * </pre>
      *
      * @param array $dict This value is passes as reference, so it returns the modified values.
      */
@@ -204,6 +210,22 @@ class MiniLang
             return isset($this->dict[$arr[0]]) ? $this->dict[$arr[0]][$arr[1]] : null;
         }
         return isset($this->dict[$arr[0]]) ? $this->dict[$arr[0]][$arr[1]][$arr[2]] : null;
+    }
+
+    /**
+     * It sets a single value into the dictionary of values. If the value exists, then it is replaced.<br>
+     * <b>Example</b>:<br>
+     * <pre>
+     * $this->setDict(['surname'=>'doe','age'=>33]); // you can set all values at once
+     * $this->setDictEntry('name','john'); // or you can set only one variable
+     * $this->evalAllLogic();
+     * </pre>
+     * @param string $name The name of the new variable
+     * @param mixed  $value The value to set
+     * @return void
+     */
+    public function setDictEntry(string $name,$value): void {
+        $this->dict[$name]=$value;
     }
 
 
@@ -238,7 +260,8 @@ class MiniLang
 
     /**
      * It sends an expression to the MiniLang, and it is decomposed in its parts.<br>
-     * The script is not executed but parsed. You can obtain the result with $this->wherePHP,$this->setPHP, etc.<br>
+     * The script is not executed but parsed and converted into an internal pseudocode.<br>
+     * You can obtain the result with $this->wherePHP,$this->setPHP, etc.<br>
      *
      * @param string $miniScript Example: "when $field1>0 then $field1=3 and field2=20"
      * @param int    $numLine    If -1 (default value), then it adds a new separate (automatic number of line).
@@ -532,7 +555,7 @@ class MiniLang
     }
 
     /**
-     * It adds a part of a pair of operation.<br>
+     * It adds a part of a pair of operation. It is used internally<br>
      * <b>Example:</b><br>
      * <pre>
      * // "field.funname(20)" where value is the first part and 20 is the second part
@@ -580,7 +603,7 @@ class MiniLang
     }
 
     /**
-     * Add params of a function (binary operation).
+     * Add params of a function (binary operation). It is used internally
      *
      * @param string      $position =['where','set','else','init'][$i]
      * @param string      $type     =['string','stringp','var','subvar','number','field','subfield','fn','special'][$i]
@@ -599,7 +622,7 @@ class MiniLang
     }
 
     /**
-     * It adds an operation (such as =,<,+,etc.)
+     * It adds an operation (such as =,<,+,etc.). It is used internally
      *
      * @param string $position =['where','set','else','init'][$i]
      * @param bool   $first    If it's true then it is the first value of a binary

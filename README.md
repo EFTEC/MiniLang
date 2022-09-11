@@ -672,6 +672,8 @@ We call some operations 1000 times.
 * Documentation.
 
 ## Version
+* 2.26   2022-09-11
+  * added method setDictEntry() 
 * 2.25   2022-09-03
   * type hinting/validation for most methods. 
 * 2.24   2022-08-26
