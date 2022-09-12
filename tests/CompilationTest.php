@@ -91,11 +91,11 @@ class CompilationTest extends AbstractMiniLang
     public function testClass2(): void
     {
         $this->mini->reset();
-        $this->mini->separate2("loop key=loopvalues");
-        $this->mini->separate2("when key._key='k4' then break");
-        $this->mini->separate2("when field1=1 then counter1=counter1+1");
-        $this->mini->separate2("when field2=1 then counter1='fail' else counter2=counter2-1");
-        $this->mini->separate2('loop end');
+        $this->mini->separate2("loop key=loopvalues",-1,'description1');
+        $this->mini->separate2("when key._key='k4' then break",-1,'description2');
+        $this->mini->separate2("when field1=1 then counter1=counter1+1",-1,'description3');
+        $this->mini->separate2("when field2=1 then counter1='fail' else counter2=counter2-1",-1,'description4');
+        $this->mini->separate2('loop end',-1,'description5');
         $a1=$this->mini->generateClass('GenerateClass',null,__DIR__.'/GenerateClass.php');
         $this->assertNotNull($a1);
         include __DIR__.'/GenerateClass.php';

@@ -14,13 +14,15 @@ use RuntimeException;
  *
  * @package  eftec\minilang
  * @author   Jorge Patricio Castro Castillo <jcastro arroba eftec dot cl>
- * @version  2.26 2022-09-11
+ * @version  2.27 2022-09-11
  * @link     https://github.com/EFTEC/MiniLang
  * @license  LGPL v3 (or commercial if it's licensed)
  */
 class MiniLang
 {
-    public const VERSION = '2.26';
+    public const VERSION = '2.27';
+    /** @var array Description operators (if any) */
+    public $description = [];
     /** @var array When operators (if any) */
     public $where = [];
     /** @var array Set operators (if any) */
@@ -31,6 +33,8 @@ class MiniLang
     public $init = [];
     /** @var array Loop operators (if any) */
     public $loop = [];
+    /** @var string[] */
+    public $descriptionPHP = [];
     /** @var string[] */
     public $wherePHP = [];
     /** @var string[] */
@@ -109,6 +113,7 @@ class MiniLang
         $this->else = [];
         $this->init = [];
         $this->loop = [];
+        $this->descriptionPHP=[];
         $this->wherePHP = [];
         $this->setPHP = [];
         $this->elsePHP = [];
@@ -263,16 +268,17 @@ class MiniLang
      * The script is not executed but parsed and converted into an internal pseudocode.<br>
      * You can obtain the result with $this->wherePHP,$this->setPHP, etc.<br>
      *
-     * @param string $miniScript Example: "when $field1>0 then $field1=3 and field2=20"
-     * @param int    $numLine    If -1 (default value), then it adds a new separate (automatic number of line).
-     *                           If set, then it adds in the number of line.
-     *
+     * @param string      $miniScript Example: "when $field1>0 then $field1=3 and field2=20"
+     * @param int         $numLine    If -1 (default value), then it adds a new separate (automatic number of line).
+     *                                If set, then it adds in the number of line.
+     * @param string|null $description
      * @see \eftec\minilang\MiniLang::serialize To pre-calculate this result and improve the performance.
      */
-    public function separate2(string $miniScript, int $numLine = -1): void
+    public function separate2(string $miniScript, int $numLine = -1,?string $description=null): void
     {
         $this->txtCounter = ($numLine < 0) ? $this->txtCounter + 1 : $numLine;
         $this->separate($miniScript);
+        $this->descriptionPHP[$this->txtCounter]=$description;
         $this->wherePHP[$this->txtCounter] = $this->compileTokens('where', $this->txtCounter);
         $this->setPHP[$this->txtCounter] = $this->compileTokens('set', $this->txtCounter);
         $this->initPHP[$this->txtCounter] = $this->compileTokens('init', $this->txtCounter);
@@ -290,15 +296,16 @@ class MiniLang
     /**
      * It sends an expression to the MiniLang, and it is decomposed in its parts. The script is not executed but parsed.
      *
-     * @param string $miniScript Example: "when $field1>0 then $field1=3 and field2=20"
-     * @param int    $numLine    If -1 (default value), then it adds a new separate (automatic number of line).
-     *                           If set, then it adds in the number of line.
-     *
+     * @param string      $miniScript Example: "when $field1>0 then $field1=3 and field2=20"
+     * @param int         $numLine    If -1 (default value), then it adds a new separate (automatic number of line).
+     *                                If set, then it adds in the number of line.
+     * @param string|null $description
      * @see \eftec\minilang\MiniLang::serialize To pre-calculate this result and improve the performance.
      */
-    public function separate(string $miniScript, int $numLine = -1): void
+    public function separate(string $miniScript, int $numLine = -1,?string $description=null): void
     {
         $this->langCounter = ($numLine < 0) ? $this->langCounter + 1 : $numLine;
+        $this->description[$this->langCounter] = $description;
         $this->where[$this->langCounter] = [];
         $this->set[$this->langCounter] = [];
         $this->else[$this->langCounter] = [];
@@ -988,7 +995,8 @@ class MiniLang
         for ($i = 0; $i <= $this->txtCounter; $i++) {
             if (!$this->wherePHP[$i]) {
                 $empties = true;
-                $code .= $align . "case $i:\n";
+                $desc=$this->descriptionPHP[$i]?" //{$this->descriptionPHP[$i]}\n":"\n";
+                $code .= $align . "case $i: $desc";
             }
         }
         if ($empties) {
@@ -996,7 +1004,8 @@ class MiniLang
         }
         for ($i = 0; $i <= $this->langCounter; $i++) {
             if ($this->wherePHP[$i]) {
-                $code .= "\t\t\tcase $i:\n";
+                $desc=$this->descriptionPHP[$i]?" //{$this->descriptionPHP[$i]}\n":"\n";
+                $code .= "\t\t\tcase $i: $desc";
                 $code .= "\t\t\t\t\$result=" . $this->wherePHP[$i] . ";\n";
                 $code .= "\t\t\t\tbreak;\n";
             }
@@ -1019,7 +1028,8 @@ class MiniLang
         for ($i = 0; $i <= $this->txtCounter; $i++) {
             if (!$this->loopPHP[$i]) {
                 $empties = true;
-                $code .= $align . "case $i:\n";
+                $desc=$this->descriptionPHP[$i]?" //{$this->descriptionPHP[$i]}\n":"\n";
+                $code .= $align . "case $i: $desc";
             }
         }
         if ($empties) {
@@ -1027,7 +1037,8 @@ class MiniLang
         }
         for ($i = 0; $i <= $this->langCounter; $i++) {
             if ($this->loopPHP[$i]) {
-                $code .= "\t\t\tcase $i:\n";
+                $desc=$this->descriptionPHP[$i]?" //{$this->descriptionPHP[$i]}\n":"\n";
+                $code .= "\t\t\tcase $i: $desc";
                 $code .= "\t\t\t\t\$result=" . $this->loopPHP[$i] . ";\n";
                 $code .= "\t\t\t\tbreak;\n";
             }
@@ -1058,7 +1069,8 @@ class MiniLang
             }
             if (!$origin) {
                 $empties = true;
-                $code .= $align . "case $i:\n";
+                $desc=$this->descriptionPHP[$i]?" //{$this->descriptionPHP[$i]}\n":"\n";
+                $code .= $align . "case $i: $desc";
             }
         }
         if ($empties) {
@@ -1072,7 +1084,8 @@ class MiniLang
                 $origin = '';
             }
             if ($origin) {
-                $code .= $align . "case $i:\n";
+                $desc=$this->descriptionPHP[$i]?" //{$this->descriptionPHP[$i]}\n":"\n";
+                $code .= $align . "case $i: $desc";
                 $txt = str_replace("\n", "\n" . $align . "\t", $origin);
                 $code .= $align . "\t" . $txt;
                 $code = rtrim($code) . "\n";
