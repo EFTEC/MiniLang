@@ -9,8 +9,8 @@ use eftec\minilang\MiniLang;
 * @version 2.21 2022-08-13T19:40:34-04:00.
 */
 class ExampleBasicClass2 extends MiniLang {
-	public $numCode=3; // num of lines of code 
-	public $usingClass=true; // if true then we are using a class (this class) 
+	public int $numCode=3; // num of lines of code
+	public bool $usingClass=true; // if true then we are using a class (this class)
 	public function whereRun($lineCode=0):bool {
 		switch($lineCode) {
 			case 3:

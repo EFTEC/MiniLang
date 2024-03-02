@@ -20,7 +20,7 @@ when var1>$abc then var3=var5 // $abc is a PHP variable.
 [![Build Status](https://travis-ci.org/EFTEC/MiniLang.svg?branch=master)](https://travis-ci.org/EFTEC/MiniLang)
 [![Packagist](https://img.shields.io/packagist/v/eftec/minilang.svg)](https://packagist.org/packages/eftec/minilang)
 [![Total Downloads](https://poser.pugx.org/eftec/minilang/downloads)](https://packagist.org/packages/eftec/minilang)
-[![Maintenance](https://img.shields.io/maintenance/yes/2022.svg)]()
+[![Maintenance](https://img.shields.io/maintenance/yes/2023.svg)]()
 [![composer](https://img.shields.io/badge/composer-%3E1.8-blue.svg)]()
 [![php](https://img.shields.io/badge/php->7.2-green.svg)]()
 [![php](https://img.shields.io/badge/php-8.0-green.svg)]()
@@ -58,6 +58,60 @@ Our library does the same but safe and clean.
 ```php
 $mini->separate("when condition then variable=1");
 ```
+
+## Table of Content
+
+<!-- TOC -->
+* [MiniLang](#minilang)
+  * [Why we need a mini script?](#why-we-need-a-mini-script)
+  * [Table of Content](#table-of-content)
+  * [Getting started](#getting-started)
+  * [Methods](#methods)
+    * [Constructor](#constructor)
+    * [reset()](#reset--)
+    * [setCaller(&$caller)](#setcaller--caller-)
+    * [setDict(&$dict)](#setdict--dict-)
+    * [function separate($miniScript)](#function-separate--miniscript-)
+    * [evalLogic($index)](#evallogic--index-)
+    * [evalAllLogic($stopOnFound = true, $start = false)](#evalalllogic--stoponfound--true-start--false-)
+    * [evalSet($idx = 0, $position = 'set')](#evalset--idx--0-position---set-)
+  * [Fields](#fields)
+    * [$throwError](#throwerror)
+    * [$errorLog](#errorlog)
+  * [Definition](#definition)
+    * [Sintaxis.](#sintaxis)
+    * [Variables](#variables)
+    * [Variables defined by a PHP Object](#variables-defined-by-a-php-object)
+    * [Variables defined by a PHP array](#variables-defined-by-a-php-array)
+    * [Global variables](#global-variables)
+  * [Literals](#literals)
+    * [Examples](#examples)
+    * [Reserved methods](#reserved-methods)
+  * [init](#init)
+    * [Code:](#code-)
+  * [where](#where)
+    * [Example](#example)
+    * [Logical expressions allowed](#logical-expressions-allowed)
+  * [set](#set)
+    * [Setting expressions allowed](#setting-expressions-allowed)
+    * [Example:](#example-)
+    * [Code:](#code--1)
+  * [else](#else)
+    * [Example](#example-1)
+  * [Loop](#loop)
+  * [Compiling the logic into a PHP class](#compiling-the-logic-into-a-php-class)
+    * [Creating the class](#creating-the-class)
+    * [Using the class](#using-the-class)
+  * [Benchmark](#benchmark)
+      * [(reset+separate+evalAllLogic) x 1000](#-resetseparateevalalllogic--x-1000)
+      * [evalAllLogic x 1000](#evalalllogic-x-1000)
+      * [(reset+separate2+evalAllLogic2) x 1000](#-resetseparate2evalalllogic2--x-1000)
+      * [(evalAllLogic2) x 1000](#-evalalllogic2--x-1000)
+      * [PHP method of class x 1000](#php-method-of-class-x-1000)
+  * [Documentation](#documentation)
+  * [To-do](#to-do)
+  * [Version](#version)
+<!-- TOC -->
 
 ## Getting started
 
@@ -142,7 +196,7 @@ It evaluates a logic. It returns true or false.
 It sets a value or values. It does not consider if WHERE is true or not.
 
 * int  $idx number of expression
-* string $position =['set','init'][$i] It could be set or init
+* string $position =['set','init']\[$i] It could be set or init
 
 ## Fields
 
@@ -369,7 +423,7 @@ var_dump($field1); // returns 3
 | false()                        | false value                                                                                                                                          |
 | true()                         | true value                                                                                                                                           |
 | on()                           | 1                                                                                                                                                    |
-| param(var,'l1.l2.l3')          | Separates an array (var) into var['l1']['l2']['l3']                                                                                                  |
+| param(var,'l1.l2.l3')          | Separates an array (var) into var['l1']\['l2']\['l3']                                                                                                |
 | off()                          | 0                                                                                                                                                    |
 | undef()                        | -1 (for undefined)                                                                                                                                   |
 | flip()                         | (special value). It inverts a value ON<->OFF<br>Used as value=flip()                                                                                 |
@@ -377,7 +431,7 @@ var_dump($field1); // returns 3
 | timer()                        | returns the current timestamp (integer)                                                                                                              |
 | interval()                     | returns the interval (in seconds) between the last change and now. It uses the field dateLastChange or method dateLastChange() of the callback class |
 | fullinterval()                 | returns the interval (in seconds) between the start of the process and now. It uses the field dateInit or method dateInit() of the callback class    |
-| contains()/str_contains()      | returns true if the text is contained in another text                                                                                                |
+| contains()/str_contains()      | returns true if the text is contained in another text.Example: str_contains(field1,'hi')                                                             |
 | str_starts_with(), startwith() | returns true if the text starts with another text                                                                                                    |
 | str_ends_with(),endwith()      | returns true if the text ends with another text.                                                                                                     |
 
@@ -672,6 +726,9 @@ We call some operations 1000 times.
 * Documentation.
 
 ## Version
+* 2.28 2024-03-02
+  * Updating dependency to PHP 7.4. The extended support of PHP 7.2 ended 3 years ago.
+  * Added more type hinting in the code.
 * 2.27   2022-09-11
   * added an optional description 
 * 2.26   2022-09-11
@@ -741,5 +798,5 @@ We call some operations 1000 times.
 * 2.4 2019-08-02 Added more documentation.  Now we allow unitary expression. 
 * 2.3 2019-05-24 Fixed some bug (if the method is not defined)
 * 2.0 2019-05-20 Second version. It uses PHP to parse the file.   
-* 1.15 2019-01-06 If we add (+) two values and they are numeric then we add. Otherwise, it concatenates.  
+* 1.15 2019-01-06 If we add (+) two values, and they are numeric then we add. Otherwise, it concatenates.  
 * 1.14 2018-12-26 First open-source version.   

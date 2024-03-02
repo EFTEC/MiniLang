@@ -6,8 +6,8 @@ namespace eftec\minilang;
  */
 class MinLangExp
 {
-    /** @var MiniLang */
-    public $parent;
+    /** @var MiniLang|null */
+    public ?MiniLang $parent = null;
 
     /**
      * @param MiniLang $parent

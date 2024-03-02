@@ -18,12 +18,11 @@
     "minimum-stability": "beta",
     "license": "LGPL-3.0",
     "require": {
-        "php": ">=7.2.5",
-        "composer/installers": "^2.0",
+        "php": ">=7.4",
         "ext-ctype": "*"
     },
     "require-dev": {
-      "phpunit/phpunit": "*"
+      "phpunit/phpunit": "^8.5.36"
     },
     "autoload": {
       "psr-4": {

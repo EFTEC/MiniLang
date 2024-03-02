@@ -1,4 +1,5 @@
-<?php /** @noinspection MultiAssignmentUsageInspection */
+<?php /** @noinspection UnknownInspectionInspection */
+/** @noinspection MultiAssignmentUsageInspection */
 /** @noinspection PhpUnused */
 /** @noinspection TypeUnsafeArraySearchInspection */
 /** @noinspection TypeUnsafeComparisonInspection */
@@ -14,54 +15,54 @@ use RuntimeException;
  *
  * @package  eftec\minilang
  * @author   Jorge Patricio Castro Castillo <jcastro arroba eftec dot cl>
- * @version  2.27 2022-09-11
+ * @version  2.28 2024-03-02
  * @link     https://github.com/EFTEC/MiniLang
  * @license  LGPL v3 (or commercial if it's licensed)
  */
 class MiniLang
 {
-    public const VERSION = '2.27';
+    public const VERSION = '2.28';
     /** @var array Description operators (if any) */
-    public $description = [];
+    public array $description = [];
     /** @var array When operators (if any) */
-    public $where = [];
+    public array $where = [];
     /** @var array Set operators (if any) */
-    public $set = [];
+    public array $set = [];
     /** @var array Set operators (if any) */
-    public $else = [];
+    public array $else = [];
     /** @var array Init operators (if any) */
-    public $init = [];
+    public array $init = [];
     /** @var array Loop operators (if any) */
-    public $loop = [];
+    public array $loop = [];
     /** @var string[] */
-    public $descriptionPHP = [];
+    public array $descriptionPHP = [];
     /** @var string[] */
-    public $wherePHP = [];
+    public array $wherePHP = [];
     /** @var string[] */
-    public $setPHP = [];
+    public array $setPHP = [];
     /** @var string[] */
-    public $elsePHP = [];
+    public array $elsePHP = [];
     /** @var string[] */
-    public $initPHP = [];
+    public array $initPHP = [];
     /** @var string[] */
-    public $loopPHP = [];
+    public array $loopPHP = [];
     /** @var string[] */
-    public $commentPHP = [];
+    public array $commentPHP = [];
     /** @var array */
-    public $areaName;
+    public array $areaName = [];
     /** @var array values per the special area */
-    public $areaValue = [];
-    public $serviceClass;
-    public $throwError = true;
-    public $errorLog = [];
-    public $numCode = -1;
+    public array $areaValue = [];
+    public ?object $serviceClass = null;
+    public bool $throwError = true;
+    public array $errorLog = [];
+    public int $numCode = -1;
     //private $stack;
     /**
      * @var bool <b>If true</b>: then this class is extended by another class that includes the definition of the
      *           tasks<br>
      *           <b>If false</b>: (default value) then the definition of the classes must be evaluated every time
      */
-    public $usingClass = false;
+    public bool $usingClass = false;
     /**
      * @var bool <b>if true</b>: then the variables inside the language are case-sensitive.<br>
      *           It doesn't consider other variables<br>
@@ -70,16 +71,16 @@ class MiniLang
      *           in a lowercase array<br> Example: field1=20 and FIELD1=20 are the same (but the value must be stored
      *           in 'field1')<br>
      */
-    public $caseSensitive = true;
+    public bool $caseSensitive = true;
     /** @var array It is an associative array where the values will be stored */
-    protected $dict;
+    protected array $dict;
     // for runtime:
-    protected $specialCom;
-    /** @var object|null for callbacks */
+    protected array $specialCom;
+    /** @var object|array|null for callbacks */
     protected $caller;
-    public $debugLine = 0;
-    protected $txtCounter = 0;
-    protected $langCounter = 0;
+    public int $debugLine = 0;
+    protected int $txtCounter = 0;
+    protected int $langCounter = 0;
 
     /**
      * MiniLang constructor.
@@ -113,7 +114,7 @@ class MiniLang
         $this->else = [];
         $this->init = [];
         $this->loop = [];
-        $this->descriptionPHP=[];
+        $this->descriptionPHP = [];
         $this->wherePHP = [];
         $this->setPHP = [];
         $this->elsePHP = [];
@@ -130,7 +131,7 @@ class MiniLang
      * MiniLang::getCase('Hello'); // returns "first" (the first letter is upper, the rest is lower)
      * </pre>
      * @param string $variableName
-     * @return string=['upper','lower','first','normal][$i]
+     * @return string=['upper','lower','first','normal'][$i]
      */
     public static function getCase(string $variableName): string
     {
@@ -225,14 +226,14 @@ class MiniLang
      * $this->setDictEntry('name','john'); // or you can set only one variable
      * $this->evalAllLogic();
      * </pre>
-     * @param string $name The name of the new variable
+     * @param string $name  The name of the new variable
      * @param mixed  $value The value to set
      * @return void
      */
-    public function setDictEntry(string $name,$value): void {
-        $this->dict[$name]=$value;
+    public function setDictEntry(string $name, $value): void
+    {
+        $this->dict[$name] = $value;
     }
-
 
     /**
      * This function decomposed an array or object into their subelements.<br>
@@ -272,13 +273,13 @@ class MiniLang
      * @param int         $numLine    If -1 (default value), then it adds a new separate (automatic number of line).
      *                                If set, then it adds in the number of line.
      * @param string|null $description
-     * @see \eftec\minilang\MiniLang::serialize To pre-calculate this result and improve the performance.
+     * @see MiniLang::serialize To pre-calculate this result and improve the performance.
      */
-    public function separate2(string $miniScript, int $numLine = -1,?string $description=null): void
+    public function separate2(string $miniScript, int $numLine = -1, ?string $description = null): void
     {
         $this->txtCounter = ($numLine < 0) ? $this->txtCounter + 1 : $numLine;
         $this->separate($miniScript);
-        $this->descriptionPHP[$this->txtCounter]=$description;
+        $this->descriptionPHP[$this->txtCounter] = $description;
         $this->wherePHP[$this->txtCounter] = $this->compileTokens('where', $this->txtCounter);
         $this->setPHP[$this->txtCounter] = $this->compileTokens('set', $this->txtCounter);
         $this->initPHP[$this->txtCounter] = $this->compileTokens('init', $this->txtCounter);
@@ -300,9 +301,9 @@ class MiniLang
      * @param int         $numLine    If -1 (default value), then it adds a new separate (automatic number of line).
      *                                If set, then it adds in the number of line.
      * @param string|null $description
-     * @see \eftec\minilang\MiniLang::serialize To pre-calculate this result and improve the performance.
+     * @see MiniLang::serialize To pre-calculate this result and improve the performance.
      */
-    public function separate(string $miniScript, int $numLine = -1,?string $description=null): void
+    public function separate(string $miniScript, int $numLine = -1, ?string $description = null): void
     {
         $this->langCounter = ($numLine < 0) ? $this->langCounter + 1 : $numLine;
         $this->description[$this->langCounter] = $description;
@@ -376,7 +377,7 @@ class MiniLang
                     case T_STRING:
                     case T_BREAK:
                         if (in_array($v[1], $this->areaName, true)) {
-                            // its an area. <area> <somvalue>
+                            // it's an area. <area> <somvalue>
                             if (count($rToken) > $i + 2) {
                                 $tk = $rToken[$i + 2];
                                 switch ($tk[0]) {
@@ -394,7 +395,7 @@ class MiniLang
                             }
                             $i += 2;
                         } else {
-                            // its a variable or a custom area.
+                            // it's a variable or a custom area.
                             switch ($v[1]) {
                                 case 'init':
                                     //adding a new init
@@ -531,7 +532,7 @@ class MiniLang
                             $this->addBinOper($first, $position, $inFunction, 'number', -$rTokenNext[1]);
                             $i++;
                         } else {
-                            // its a minus
+                            // it's a minus
                             $this->addOp($position, $first, $v);
                         }
                         break;
@@ -756,7 +757,7 @@ class MiniLang
                         $this->compileTokenField($argToken, $pArg, $codeArg, $position);
                     }
                     $argTxt = implode(',', $codeArg);
-                    /** @see \eftec\minilang\MiniLang::callFunction */
+                    /** @see MiniLang::callFunction */
                     if ($i2 === 'flip') {
                         $code[] = $codeArg[0] . "=\$this->callFunction('$i2',[$argTxt])";
                     } else {
@@ -764,7 +765,7 @@ class MiniLang
                     }
                 } else {
                     //$i3=($i3===null)?'':',['.$i3.']';
-                    /** @see \eftec\minilang\MiniLang::callFunction */
+                    /** @see MiniLang::callFunction */
                     $code[] = "\$this->callFunction('$i2',[$i3])";
                 }
                 $startPosition += 3;
@@ -966,8 +967,8 @@ class MiniLang
         $code .= "* @version " . self::VERSION . " " . date('c') . ".\n";
         $code .= "*/\n";
         $code .= "class $className extends MiniLang {\n";
-        $code .= "\tpublic \$numCode=" . $this->langCounter . "; // num of lines of code \n";
-        $code .= "\tpublic \$usingClass=true; // if true then we are using a class (this class) \n";
+        $code .= "\tpublic int \$numCode=" . $this->langCounter . "; // num of lines of code \n";
+        $code .= "\tpublic bool \$usingClass=true; // if true then we are using a class (this class) \n";
         $this->generateClassWhere($code);
         $this->generateClassLoop($code);
         $this->generateClassSet($code);
@@ -995,7 +996,7 @@ class MiniLang
         for ($i = 0; $i <= $this->txtCounter; $i++) {
             if (!$this->wherePHP[$i]) {
                 $empties = true;
-                $desc=$this->descriptionPHP[$i]?" //{$this->descriptionPHP[$i]}\n":"\n";
+                $desc = $this->descriptionPHP[$i] ? " //{$this->descriptionPHP[$i]}\n" : "\n";
                 $code .= $align . "case $i: $desc";
             }
         }
@@ -1004,7 +1005,7 @@ class MiniLang
         }
         for ($i = 0; $i <= $this->langCounter; $i++) {
             if ($this->wherePHP[$i]) {
-                $desc=$this->descriptionPHP[$i]?" //{$this->descriptionPHP[$i]}\n":"\n";
+                $desc = $this->descriptionPHP[$i] ? " //{$this->descriptionPHP[$i]}\n" : "\n";
                 $code .= "\t\t\tcase $i: $desc";
                 $code .= "\t\t\t\t\$result=" . $this->wherePHP[$i] . ";\n";
                 $code .= "\t\t\t\tbreak;\n";
@@ -1028,7 +1029,7 @@ class MiniLang
         for ($i = 0; $i <= $this->txtCounter; $i++) {
             if (!$this->loopPHP[$i]) {
                 $empties = true;
-                $desc=$this->descriptionPHP[$i]?" //{$this->descriptionPHP[$i]}\n":"\n";
+                $desc = $this->descriptionPHP[$i] ? " //{$this->descriptionPHP[$i]}\n" : "\n";
                 $code .= $align . "case $i: $desc";
             }
         }
@@ -1037,7 +1038,7 @@ class MiniLang
         }
         for ($i = 0; $i <= $this->langCounter; $i++) {
             if ($this->loopPHP[$i]) {
-                $desc=$this->descriptionPHP[$i]?" //{$this->descriptionPHP[$i]}\n":"\n";
+                $desc = $this->descriptionPHP[$i] ? " //{$this->descriptionPHP[$i]}\n" : "\n";
                 $code .= "\t\t\tcase $i: $desc";
                 $code .= "\t\t\t\t\$result=" . $this->loopPHP[$i] . ";\n";
                 $code .= "\t\t\t\tbreak;\n";
@@ -1069,7 +1070,7 @@ class MiniLang
             }
             if (!$origin) {
                 $empties = true;
-                $desc=$this->descriptionPHP[$i]?" //{$this->descriptionPHP[$i]}\n":"\n";
+                $desc = $this->descriptionPHP[$i] ? " //{$this->descriptionPHP[$i]}\n" : "\n";
                 $code .= $align . "case $i: $desc";
             }
         }
@@ -1084,7 +1085,7 @@ class MiniLang
                 $origin = '';
             }
             if ($origin) {
-                $desc=$this->descriptionPHP[$i]?" //{$this->descriptionPHP[$i]}\n":"\n";
+                $desc = $this->descriptionPHP[$i] ? " //{$this->descriptionPHP[$i]}\n" : "\n";
                 $code .= $align . "case $i: $desc";
                 $txt = str_replace("\n", "\n" . $align . "\t", $origin);
                 $code .= $align . "\t" . $txt;
@@ -1098,7 +1099,6 @@ class MiniLang
         $code .= "\t\treturn \$result;\n";
         $code .= "\t} // end function {$type}Run\n";
     }
-
 
     /**
      * It evaluates all the expressions.<br>
@@ -1458,7 +1458,7 @@ class MiniLang
      */
     public function getValueP($string)
     {
-        return preg_replace_callback('/{{\s?(\w+)\s?}}/u', function ($matches) {
+        return preg_replace_callback('/{{\s?(\w+)\s?}}/u', function($matches) {
             if (is_array($matches)) {
                 $item = substr($matches[0], 2, -2); // removes {{ and }}
                 return $this->dict[$item] ?? null;
@@ -1518,7 +1518,7 @@ class MiniLang
     {
         if (is_object($this->caller)) {
             if (method_exists($this->caller, $nameFunction)) {
-                return call_user_func_array(array($this->caller, $nameFunction), $args);
+                return call_user_func_array([$this->caller, $nameFunction], $args);
             }
             if (isset($this->caller->{$nameFunction})) {
                 return $this->caller->{$nameFunction};
@@ -1529,10 +1529,10 @@ class MiniLang
             }
         }
         if ($this->serviceClass !== null && method_exists($this->serviceClass, $nameFunction)) {
-            return call_user_func_array(array($this->serviceClass, $nameFunction), $args);
+            return call_user_func_array([$this->serviceClass, $nameFunction], $args);
         }
         if (method_exists($this, '_' . $nameFunction)) {
-            return call_user_func_array(array($this, '_' . $nameFunction), $args);
+            return call_user_func_array([$this, '_' . $nameFunction], $args);
         }
         if (function_exists($nameFunction)) {
             return call_user_func_array($nameFunction, $args);
@@ -1645,7 +1645,7 @@ class MiniLang
         if (is_object($this->caller)) {
             if (method_exists($this->caller, $nameFunction)) {
                 $args[] = (is_object($setValue)) ? clone $setValue : $setValue; // it adds a second parameter
-                call_user_func_array(array($this->caller, $nameFunction), $args);
+                call_user_func_array([$this->caller, $nameFunction], $args);
                 return;
             }
             if (isset($this->caller->{$nameFunction})) {
@@ -1659,7 +1659,7 @@ class MiniLang
             }
         }
         if ($this->serviceClass !== null) {
-            call_user_func_array(array($this->serviceClass, $nameFunction), $args);
+            call_user_func_array([$this->serviceClass, $nameFunction], $args);
         }
     }
 
@@ -1742,7 +1742,6 @@ class MiniLang
         return $r;
     }
 
-
     public function whereRun(int $lineCode): bool
     {
         $this->throwError('whereRun() not defined yet, you must override this method');
@@ -1757,7 +1756,7 @@ class MiniLang
      *
      * @return string The current object serialized
      *
-     * @see \eftec\minilang\MiniLang::separate
+     * @see MiniLang::separate
      */
     public function serialize(): string
     {
@@ -1784,5 +1783,4 @@ class MiniLang
         }
         return $r;
     }
-
 }
